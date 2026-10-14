@@ -1,0 +1,150 @@
+{
+  "AutocompletePlusController": {
+    "display_name": "Autocomplete+++ 通配符与动态提示词控制器",
+    "description": "放置在画布上即可覆盖对应的全局设置，无需连线。同类控制器有多个时，最近操作的控制器优先生效。",
+    "inputs": {
+      "expansion_engine": {
+        "name": "提示词展开引擎",
+        "tooltip": "启用后在执行前展开通配符和动态提示词。默认使用全局设置。"
+      },
+      "wildcard_mode": {
+        "name": "通配符模式",
+        "tooltip": "随机：每次重新选择；跟随种子：按种子选择；保持上次选择：种子不变时沿用上次结果；按顺序：逐行循环。"
+      },
+      "dynamic_prompt_mode": {
+        "name": "动态提示词模式",
+        "tooltip": "随机：每次重新选择；跟随种子：按种子选择；保持上次选择：种子不变时沿用上次结果。"
+      },
+      "passthrough": {
+        "name": "直通输入",
+        "tooltip": "可选的直通输入。输入内容原样输出，无需连线也可使用此控制器。"
+      }
+    },
+    "outputs": {
+      "0": {
+        "name": "直通输出"
+      }
+    }
+  },
+  "AutocompletePlusFormattingController": {
+    "display_name": "Autocomplete+++ 格式整理控制器",
+    "description": "放置在画布上即可覆盖对应的全局设置，无需连线。同类控制器有多个时，最近操作的控制器优先生效。",
+    "inputs": {
+      "anima_artist_mode": {
+        "name": "Anima 艺术家前缀",
+        "tooltip": "启用后为艺术家标签使用 @ 前缀。默认使用全局设置。"
+      },
+      "auto_insert_comma": {
+        "name": "自动插入逗号",
+        "tooltip": "插入补全标签后自动添加英文逗号和空格。"
+      },
+      "replace_underscore": {
+        "name": "下划线替换为空格",
+        "tooltip": "插入普通标签时将下划线替换为空格。"
+      },
+      "escape_parentheses": {
+        "name": "转义圆括号",
+        "tooltip": "转义标签名称中的圆括号，避免误识别为权重语法。"
+      },
+      "auto_close_curly_braces": {
+        "name": "自动补全花括号",
+        "tooltip": "输入 { 时自动补上 }，支持成对删除和包裹选中文本。"
+      },
+      "auto_format_on_blur": {
+        "name": "失去焦点时自动格式化",
+        "tooltip": "离开提示词输入框时自动整理格式。"
+      },
+      "format_space_after_comma": {
+        "name": "逗号后添加空格",
+        "tooltip": "自动格式化时在英文逗号后添加空格。"
+      },
+      "format_trim_prompt_end_comma": {
+        "name": "移除提示词末尾逗号",
+        "tooltip": "自动格式化时移除整个提示词末尾的逗号。"
+      },
+      "format_trim_line_end_comma": {
+        "name": "移除每行末尾逗号",
+        "tooltip": "自动格式化时移除每一行末尾的逗号。"
+      },
+      "format_replace_underscore": {
+        "name": "格式化时替换下划线",
+        "tooltip": "自动格式化时将普通标签的下划线替换为空格。"
+      },
+      "keep_underscores_mode": {
+        "name": "保留下划线列表模式",
+        "tooltip": "选择跟随全局设置、追加到全局列表，或用此节点的列表覆盖全局列表。"
+      },
+      "keep_underscores_list": {
+        "name": "保留下划线的标签列表",
+        "tooltip": "用英文逗号分隔需保留下划线的标签，例如 custom_tag、special_style。"
+      },
+      "passthrough": {
+        "name": "直通输入",
+        "tooltip": "可选的直通输入。输入内容原样输出，无需连线也可使用此控制器。"
+      }
+    },
+    "outputs": {
+      "0": {
+        "name": "直通输出"
+      }
+    }
+  },
+  "AutocompletePlusIntegrationsController": {
+    "display_name": "Autocomplete+++ 插件集成控制器",
+    "description": "放置在画布上即可覆盖对应的全局设置，无需连线。同类控制器有多个时，最近操作的控制器优先生效。",
+    "inputs": {
+      "enable_lora_embedding": {
+        "name": "LoRA / Embedding 补全",
+        "tooltip": "输入相应前缀时提供 LoRA 和 Embedding 补全。默认使用全局设置。"
+      },
+      "lora_path_mode": {
+        "name": "LoRA 路径补全方式",
+        "tooltip": "选择自动判断、仅插入文件名，或插入完整路径。默认使用全局设置。"
+      },
+      "lora_manager_mode": {
+        "name": "LoRA Manager 集成",
+        "tooltip": "与 LoRA Manager 联动，提供工作流触发词和预览图片。默认使用全局设置。"
+      },
+      "passthrough": {
+        "name": "直通输入",
+        "tooltip": "可选的直通输入。输入内容原样输出，无需连线也可使用此控制器。"
+      }
+    },
+    "outputs": {
+      "0": {
+        "name": "直通输出"
+      }
+    }
+  },
+  "AutocompletePlusDictionariesController": {
+    "display_name": "Autocomplete+++ 词典控制器",
+    "description": "放置在画布上即可覆盖对应的全局设置，无需连线。同类控制器有多个时，最近操作的控制器优先生效。",
+    "inputs": {
+      "tag_file": {
+        "name": "主标签文件",
+        "tooltip": "选择主标签 CSV 文件，或跟随全局设置。文件名保持原样。"
+      },
+      "extra_tag_files_mode": {
+        "name": "附加标签文件模式",
+        "tooltip": "选择跟随全局设置、使用自定义附加文件列表，或禁用附加文件。"
+      },
+      "extra_tag_files": {
+        "name": "附加标签文件",
+        "tooltip": "将附加标签文件模式设为“覆盖（使用自定义列表）”后，点击或输入即可选择 CSV 词典。"
+      },
+      "translation_file": {
+        "name": "标签翻译文件",
+        "tooltip": "选择标签翻译 CSV 文件。“无”禁用标签翻译；默认使用全局设置。"
+      },
+      "passthrough": {
+        "name": "直通输入",
+        "tooltip": "可选的直通输入。输入内容原样输出，无需连线也可使用此控制器。"
+      }
+    },
+    "outputs": {
+      "0": {
+        "name": "直通输出"
+      }
+    }
+  }
+}

@@ -1,0 +1,248 @@
+{
+  "ComfyUI_AutocompletePlusPlus_PopupPreview": {
+    "name": "普通补全显示预览"
+  },
+  "ComfyUI_AutocompletePlusPlus_PopupWidth": {
+    "name": "普通补全窗口宽度",
+    "tooltip": "普通补全窗口的宽度（像素），范围 280–1600，实际显示不会超出屏幕。也可拖动窗口右下角调整并保存宽度。"
+  },
+  "ComfyUI_AutocompletePlusPlus_PopupWrap": {
+    "name": "普通补全词条自动换行",
+    "tooltip": "让较长的标签和翻译换行显示。关闭后使用单行省略，鼠标悬停在词条上可查看完整内容。"
+  },
+  "ComfyUI_AutocompletePlusPlus_PopupLayout": {
+    "name": "普通补全翻译布局",
+    "tooltip": "选择英文标签与翻译的排列方式：行内显示、左右分栏或上下排列。用于普通补全窗口。",
+    "options": { "Inline": "行内显示", "Columns": "左右分栏", "Stacked": "上下排列" }
+  },
+  "ComfyUI_AutocompletePlusPlus_EnableRelatedTags": {
+    "name": "启用关联标签",
+    "tooltip": "在提示词旁显示相关的 Danbooru 标签。也可将光标放在标签内，按 Ctrl+Shift+空格打开面板。"
+  },
+  "ComfyUI_AutocompletePlusPlus_RelatedTagsTrigger": {
+    "name": "关联标签触发方式",
+    "tooltip": "选择打开关联标签面板的方式。所有模式均支持 Ctrl+Shift+空格。",
+    "options": { "Click": "点击标签", "Ctrl + Click": "Ctrl + 点击", "Shortcut only": "仅快捷键" }
+  },
+  "ComfyUI_AutocompletePlusPlus_MaxRelatedTags": {
+    "name": "最多显示的关联标签数",
+    "tooltip": "按 Jaccard 相似度排序，限制面板中显示的关联标签数量。"
+  },
+  "ComfyUI_AutocompletePlusPlus_RelatedTagsLayout": {
+    "name": "关联标签默认布局",
+    "tooltip": "设置面板的默认布局。面板顶部按钮可临时切换布局。",
+    "options": { "Horizontal": "横向排列", "Vertical": "纵向列表" }
+  },
+  "ComfyUI_AutocompletePlusPlus_EnableConsoleDebugLogs": {
+    "name": "启用控制台调试日志",
+    "tooltip": "在浏览器开发者工具（F12）的控制台中输出内部诊断、通配符和动态提示词展开及生命周期日志。"
+  },
+  "ComfyUI_AutocompletePlusPlus_OverrideNodeTypes": {
+    "name": "优先接管的节点",
+    "tooltip": "用英文逗号分隔节点类型的完整名称或关键词。在这些节点上优先使用 Autocomplete+++，并抑制冲突的内置弹窗。"
+  },
+  "ComfyUI_AutocompletePlusPlus_IgnoredNodeTypes": {
+    "name": "忽略的节点",
+    "tooltip": "用英文逗号分隔节点类型的完整名称或关键词。在这些节点上禁用自动补全。"
+  },
+  "ComfyUI_AutocompletePlusPlus_LoraWeightStep": {
+    "name": "LoRA 权重调整步长",
+    "tooltip": "在 LoRA 标签（如 <lora:name:1.0>）中按 Ctrl+↑/↓ 时，每次调整的权重数值。"
+  },
+  "ComfyUI_AutocompletePlusPlus_TagWeightStep": {
+    "name": "标签 / Embedding 权重调整步长",
+    "tooltip": "在普通标签或 Embedding（如 (tag:1.1)）中按 Ctrl+↑/↓ 时，每次调整的权重数值。"
+  },
+  "ComfyUI_AutocompletePlusPlus_KeyAccept": {
+    "name": "插入补全候选的按键",
+    "tooltip": "选择用于插入当前候选项的按键：Tab、Enter，或同时启用两者。"
+  },
+  "ComfyUI_AutocompletePlusPlus_Enabled": {
+    "name": "启用自动补全",
+    "tooltip": "启用或禁用 Autocomplete+++ 自动补全引擎的总开关。"
+  },
+  "ComfyUI_AutocompletePlusPlus_ClearFavorHistory": {
+    "name": "清除常用标签历史",
+    "tooltip": "清空个人标签使用次数记录。在 3 秒内点击两次确认清除。"
+  },
+  "ComfyUI_AutocompletePlusPlus_FavorMaxTags": {
+    "name": "历史记录容量（最多标签数）",
+    "tooltip": "最多保存多少个不同标签的使用记录（1,000–50,000）。超出后自动清理最近最少使用的记录。"
+  },
+  "ComfyUI_AutocompletePlusPlus_FavorMaxAge": {
+    "name": "常用标签有效期（天）",
+    "tooltip": "标签连续多少天未使用后，取消其常用资格。0 表示永不过期。"
+  },
+  "ComfyUI_AutocompletePlusPlus_FavorMinCount": {
+    "name": "常用标签阈值（最少使用次数）",
+    "tooltip": "标签至少使用多少次后，才显示常用徽标并提升排序优先级。"
+  },
+  "ComfyUI_AutocompletePlusPlus_FrequencySort": {
+    "name": "优先显示常用标签",
+    "tooltip": "记录个人标签使用次数，将常用标签排在前面并显示常用徽标。"
+  },
+  "ComfyUI_AutocompletePlusPlus_ShowWikiLinks": {
+    "name": "显示百科徽标",
+    "tooltip": "在标签前显示百科按钮，点击可打开对应的 Danbooru 或 e621 百科页面。当前标签 CSV 文件名需包含 danbooru 或 e621。"
+  },
+  "ComfyUI_AutocompletePlusPlus_MaxSuggestions": {
+    "name": "每页显示的候选项数",
+    "tooltip": "每页显示的候选数量。所有匹配项均可通过翻页按钮或 PageUp / PageDown 浏览。"
+  },
+  "ComfyUI_AutocompletePlusPlus_CandidateSortMode": {
+    "name": "标签排序方式",
+    "tooltip": "匹配优先使用原有匹配评分；投稿数优先将完全匹配排在前面，其余按投稿数降序。常用标签仍可置顶，也可直接在补全弹窗中切换。",
+    "options": {
+      "Match": "匹配优先",
+      "Count": "投稿数优先"
+    }
+  },
+  "ComfyUI_AutocompletePlusPlus_PreviewAnimationMode": {
+    "name": "预览动画播放方式",
+    "tooltip": "控制 LoRA / Embedding 视频缩略图的播放方式。",
+    "options": {
+      "Hover to Play": "悬停时播放",
+      "Always Play": "始终播放",
+      "Static": "静态预览"
+    }
+  },
+  "ComfyUI_AutocompletePlusPlus_PreviewPosition": {
+    "name": "悬浮预览卡片位置",
+    "tooltip": "设置缩略图和提示词预设等悬浮预览卡片的显示位置。",
+    "options": {
+      "Left": "左侧",
+      "Right": "右侧",
+      "Disabled": "禁用"
+    }
+  },
+  "ComfyUI_AutocompletePlusPlus_FormatKeepUnderscoresList": {
+    "name": "保留下划线的标签",
+    "tooltip": "用英文逗号分隔需要保留下划线的标签。自动补全插入和提示词自动格式化时都不会替换这些标签的下划线，例如 custom_style、special_tag。"
+  },
+  "ComfyUI_AutocompletePlusPlus_AutoFormatRules": {
+    "name": " "
+  },
+  "ComfyUI_AutocompletePlusPlus_AutoFormatOnBlur": {
+    "name": "输入框失去焦点时自动格式化",
+    "tooltip": "离开提示词输入框时自动整理格式。下方可分别启用或禁用各项规则。"
+  },
+  "ComfyUI_AutocompletePlusPlus_AutoCloseCurlyBraces": {
+    "name": "自动补全花括号",
+    "tooltip": "输入左花括号时自动补上右花括号，支持跳过已有右括号、成对删除和包裹选中文本。"
+  },
+  "ComfyUI_AutocompletePlusPlus_EscapeParentheses": {
+    "name": "转义标签中的圆括号",
+    "tooltip": "插入标签时转义其中的圆括号，避免将标签名称中的括号误识别为权重语法。"
+  },
+  "ComfyUI_AutocompletePlusPlus_ReplaceUnderscore": {
+    "name": "将下划线替换为空格",
+    "tooltip": "插入普通标签时，将下划线替换为空格。"
+  },
+  "ComfyUI_AutocompletePlusPlus_AutoInsertComma": {
+    "name": "自动插入逗号",
+    "tooltip": "插入标签后自动添加英文逗号和空格。"
+  },
+  "ComfyUI_AutocompletePlusPlus_AnimaArtistMode": {
+    "name": "Anima 艺术家前缀模式",
+    "tooltip": "控制插入和搜索艺术家标签时是否使用 {'@'} 前缀（推荐用于 Anima 模型）。自动模式会检测画布中的 Anima 模块化工作流。",
+    "options": {
+      "Auto": "自动",
+      "Enabled": "启用",
+      "Disabled": "禁用"
+    }
+  },
+  "ComfyUI_AutocompletePlusPlus_RestoreChoicesNotice": {
+    "name": ""
+  },
+  "ComfyUI_AutocompletePlusPlus_RestoreChoicesInterceptionMode": {
+    "name": "PNG 导入监听模式",
+    "tooltip": "轻量模式仅在导入期间监听 fetch 请求，可能遗漏第三方插件的延迟导入。完整模式持续监听，以兼容更多导入方式。",
+    "options": {
+      "Lite": "轻量",
+      "Full": "完整"
+    }
+  },
+  "ComfyUI_AutocompletePlusPlus_RestoreChoicesOnPngImport": {
+    "name": "导入 PNG 时恢复上次选择（实验性）",
+    "tooltip": "启用“保持上次选择”且种子未改变时，从导入 PNG 的元数据中恢复动态提示词和通配符的选择结果。"
+  },
+  "ComfyUI_AutocompletePlusPlus_DynamicPromptMode": {
+    "name": "动态提示词选择模式",
+    "tooltip": "设置每次生成时如何选择动态提示词的候选内容。",
+    "options": {
+      "Random": "随机",
+      "Follow Seed": "跟随种子",
+      "Keep Last Choice": "保持上次选择"
+    }
+  },
+  "ComfyUI_AutocompletePlusPlus_WildcardMode": {
+    "name": "通配符选择模式",
+    "tooltip": "设置每次生成时如何从通配符文件中选择内容。",
+    "options": {
+      "Random": "随机",
+      "Follow Seed": "跟随种子",
+      "Keep Last Choice": "保持上次选择",
+      "Sequential": "按顺序"
+    }
+  },
+  "ComfyUI_AutocompletePlusPlus_EnablePromptExpansion": {
+    "name": "启用提示词展开引擎",
+    "tooltip": "在执行前，由浏览器展开通配符和动态提示词；画布上保留原始提示词模板。"
+  },
+  "ComfyUI_AutocompletePlusPlus_LoraManagerMode": {
+    "name": "LoRA Manager 集成",
+    "tooltip": "与 LoRA Manager 联动，优先提供当前工作流的触发词，并补充预览图片。",
+    "options": {
+      "Auto": "自动",
+      "Enabled": "启用",
+      "Disabled": "禁用"
+    }
+  },
+  "ComfyUI_AutocompletePlusPlus_LoraPathMode": {
+    "name": "LoRA 路径补全方式",
+    "tooltip": "选择插入文件名还是完整路径。自动模式优先遵循 LoRA Manager 的完整路径语法；否则默认插入文件名，仅在文件名重复时使用完整路径。",
+    "options": {
+      "Auto": "自动",
+      "Filename Only": "仅文件名",
+      "Full Path": "完整路径"
+    }
+  },
+  "ComfyUI_AutocompletePlusPlus_EnableModels": {
+    "name": "启用 LoRA 和 Embedding 补全",
+    "tooltip": "输入相应前缀时，提供 <lora:...> 和 embedding:... 候选项。"
+  },
+  "ComfyUI_AutocompletePlusPlus_TranslationFile": {
+    "name": "标签翻译文件",
+    "tooltip": "选择 tags/translations/ 目录中的翻译 CSV，覆盖词库自带的翻译。选择“无”时只使用词库内嵌的翻译；可分别关闭翻译显示和中文搜索。",
+    "options": {
+      "None": "无"
+    }
+  },
+  "ComfyUI_AutocompletePlusPlus_ExtraFiles": {
+    "name": "附加标签文件",
+    "tooltip": "从 tags 目录中加载额外的标签 CSV 文件。"
+  },
+  "ComfyUI_AutocompletePlusPlus_TagFile": {
+    "name": "主标签文件",
+    "tooltip": "从 tags 目录中加载的主要标签数据库 CSV 文件。"
+  },
+  "ComfyUI_AutocompletePlusPlus_TranslationOldFormat": {
+    "name": "翻译文件使用旧版三列格式",
+    "tooltip": "如果翻译 CSV 使用“标签、类型/次数、翻译”的旧版三列格式，请启用此项。默认使用“标签、翻译”的两列格式。"
+  },
+  "ComfyUI_AutocompletePlusPlus_ShowTranslations": {
+    "name": "在补全候选中显示翻译",
+    "tooltip": "在补全弹窗中，为标签和别名显示对应的翻译。"
+  },
+  "ComfyUI_AutocompletePlusPlus_SearchTranslation": {
+    "name": "按翻译 / 中文名称搜索",
+    "tooltip": "允许使用翻译后的名称搜索标签。"
+  },
+  "ComfyUI_AutocompletePlusPlus_HotkeyRules": {
+    "name": " "
+  },
+  "ComfyUI_AutocompletePlusPlus_EnableHotkeyEnhance": {
+    "name": "启用增强编辑快捷键",
+    "tooltip": "启用提示词编辑快捷键。下方可分别启用或禁用各项快捷键规则。"
+  }
+}

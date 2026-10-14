@@ -1,0 +1,14 @@
+{
+  "settingsCategories": {
+    "Autocomplete+++": "Autocomplete+++",
+    "Autocomplete": "自动补全",
+    "Related Tags": "关联标签",
+    "Display": "显示",
+    "Formatting": "格式整理",
+    "Wildcards & Dynamic Prompts": "通配符与动态提示词",
+    "Models & Integrations": "模型与插件集成",
+    "Tags & Dictionaries": "标签与词典",
+    "Translation": "标签翻译",
+    "Shortcuts & Interaction": "快捷键与交互"
+  }
+}

@@ -1,0 +1,13 @@
+[project]
+name = "comfyui-autocomplete-plus-plus-plus"
+description = "Chinese-enhanced tag autocomplete for ComfyUI with sorting, pagination, category filters, and related tags."
+version = "1.3.0"
+license = {file = "LICENSE"}
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/TwinkleStarDust/comfyui-autocomplete-plus-plus-plus"
+Upstream = "https://github.com/michikora/ComfyUI-Autocomplete-Plus-Plus"
+
+[tool.comfy]
+DisplayName = "Autocomplete+++"
