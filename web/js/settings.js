@@ -10,7 +10,7 @@ export const settingValues = {
     keyAcceptEnter: true,
     ignoredNodeTypes: "",
     overrideNodeTypes: "",
-    tagFile: "danbooru.csv",
+    tagFile: "danbooru_merged_zh.csv",
     extraFiles: "",
     translationFile: "None",
     searchTranslation: true,
@@ -143,7 +143,7 @@ try {
     settingValues.keyAcceptEnter = loadSetting("KeyAcceptEnter", true);
     settingValues.ignoredNodeTypes = loadSetting("IgnoredNodeTypes", "");
     settingValues.overrideNodeTypes = loadSetting("OverrideNodeTypes", "");
-    settingValues.tagFile = loadSetting("TagFile", "danbooru.csv");
+    settingValues.tagFile = loadSetting("TagFile", "danbooru_merged_zh.csv");
     settingValues.extraFiles = loadSetting("ExtraFiles", "");
     settingValues.translationFile = loadSetting("TranslationFile", "None");
     settingValues.searchTranslation = loadSetting("SearchTranslation", true);

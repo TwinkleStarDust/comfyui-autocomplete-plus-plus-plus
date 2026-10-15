@@ -80,7 +80,7 @@ export function getCanvasDictionariesOverrides() {
 export function getEffectiveDictionarySettings() {
     const overrides = getCanvasDictionariesOverrides();
     const effective = {
-        tagFile: settingValues.tagFile || "danbooru.csv",
+        tagFile: settingValues.tagFile || "danbooru_merged_zh.csv",
         extraFiles: settingValues.extraFiles || "",
         translationFile: settingValues.translationFile || "None"
     };

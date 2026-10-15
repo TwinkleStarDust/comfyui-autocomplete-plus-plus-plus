@@ -2,7 +2,7 @@
 
 [项目首页](README.md) · [词库与索引](docs/DICTIONARIES.md) · [发布说明](docs/PUBLISHING.md)
 
-本指南将上游 Autocomplete++ 的功能、语法、快捷键和设置说明译为中文，并结合 Autocomplete+++ 的交互与词库整理。初次安装请先完成[快速配置](README.md#快速开始)。
+本指南将上游 Autocomplete++ 的功能、语法、快捷键和设置说明译为中文，并结合 Autocomplete+++ 的交互与词库整理。初次安装请先完成[快速配置](README.md#快速开始)。默认主词库为 `danbooru_merged_zh.csv`，Danbooru 词库截止至 **2026.10.12**。
 
 各项功能的实际中文界面、排序与布局对比、动态提示词运行结果，见首页的[功能图解](README.md#功能介绍)。
 
@@ -333,7 +333,7 @@ Node 2.0 中存在多个同类控制器时，会显示生效 / 未生效徽标�
 <details>
 <summary>中文词库与自定义文件</summary>
 
-主词库和附加 CSV 放入 `tags/`，独立翻译放入 `tags/translations/`。中文合并主词库为 `danbooru_merged_zh.csv`，已内嵌译名；独立翻译可选 `danbooru_zh.csv`。
+主词库和附加 CSV 放入 `tags/`，独立翻译放入 `tags/translations/`。默认中文合并主词库为 `danbooru_merged_zh.csv`，已内嵌译名；独立翻译可选 `danbooru_zh.csv`。
 
 使用本项目两列翻译时，关闭「旧版三列翻译格式」。新增或更换文件后，必要时重启后端并刷新页面以更新列表和缓存；同时检查工作流词典控制器是否覆盖全局选择。
 

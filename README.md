@@ -14,7 +14,7 @@
 
 Autocomplete+++ 在 ComfyUI 的提示词输入框中提供标签搜索、中文名称、LoRA / Embedding 补全，以及提示词展开和编辑工具。支持经典 LiteGraph 与 Node 2.0。
 
-项目基于 [Autocomplete++](https://github.com/michikora/ComfyUI-Autocomplete-Plus-Plus) 改造，在原有功能上加入中文 UI、双排序、完整分页、类别筛选、可调补全布局和本地关联标签。当前合并词库包含 **296,884 个去重标签**。
+项目基于 [Autocomplete++](https://github.com/michikora/ComfyUI-Autocomplete-Plus-Plus) 改造，在原有功能上加入中文 UI、双排序、完整分页、类别筛选、可调补全布局和本地关联标签。默认使用 `danbooru_merged_zh.csv`，包含 **296,884 个去重标签**，Danbooru 词库截止至 **2026.10.12**。
 
 ## 快速开始
 
@@ -46,7 +46,7 @@ ComfyUI-Manager 中的 `Autocomplete++` 条目对应原项目。安装本分支�
 | 按翻译 / 中文名称搜索 | 开启 |
 | 在补全候选中显示翻译 | 开启 |
 
-默认主词库仍为 `danbooru.csv`，请手动切换。工作流中若有「词典控制器」，将其设为跟随全局，或选择相同文件。
+默认主词库为 `danbooru_merged_zh.csv`，已内嵌中文译名。已有安装若保留了其他词库设置，可在此切换；工作流中若有「词典控制器」，将其设为跟随全局，或选择相同文件。
 
 配置后可以输入 `long hair`、`长发` 或 `yui` 试用补全。选中候选后，按 `Enter` / `Tab` 插入对应英文标签。
 
@@ -357,7 +357,7 @@ Anima 模式生效时，输入 `@` 可搜索画师；从普通标签搜索选择
 - [词库与关联索引](docs/DICTIONARIES.md)：CSV 格式、合并来源、翻译保留规则及索引构建。
 - [发布说明](docs/PUBLISHING.md)：上传 GitHub 时的数据文件和项目元数据处理。
 
-当前词库使用 **UTF-8 无 BOM**，tagdb-updater 来源快照日期为 **2026-10-12**。已有译名与别名原样保留，只有新增词条补充机器翻译；数据不自动更新，也未全部人工校订。
+本项目 Danbooru 词库截止至 **2026.10.12**，使用当日的 tagdb-updater 来源快照，编码为 **UTF-8 无 BOM**。已有译名与别名原样保留，只有新增词条补充机器翻译；数据不自动更新，也未全部人工校订。
 
 ## 项目来源与致谢
 

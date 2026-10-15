@@ -287,7 +287,7 @@ class CsvDictionaryPicker {
         }
 
         // Exclude active primary tag_file (from controller node, or global settings if "Default")
-        let effectivePrimaryTagFile = settingValues.tagFile || "danbooru.csv";
+        let effectivePrimaryTagFile = settingValues.tagFile || "danbooru_merged_zh.csv";
         try {
             const node = getActiveControllerNode("AutocompletePlusDictionariesController");
             if (node) {
