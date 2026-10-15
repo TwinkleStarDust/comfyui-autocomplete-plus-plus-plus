@@ -44,7 +44,9 @@ git add -f tags/translations/your_dictionary.csv
 
 `pyproject.toml` 的项目名为 `comfyui-autocomplete-plus-plus-plus`，显示名为 `Autocomplete+++`；来源链接以 `Upstream` 标注原项目。内部设置 ID、节点类型和本地 API 路径沿用原标识，以兼容已有配置与工作流。
 
-GitHub 仓库地址为 [TwinkleStarDust/comfyui-autocomplete-plus-plus-plus](https://github.com/TwinkleStarDust/comfyui-autocomplete-plus-plus-plus)，初次上传设为私有仓库。
+GitHub 仓库地址为 [TwinkleStarDust/comfyui-autocomplete-plus-plus-plus](https://github.com/TwinkleStarDust/comfyui-autocomplete-plus-plus-plus)，现已公开。
+
+[Comfy Registry 项目页](https://registry.comfy.org/zh/publishers/twinklestar/nodes/comfyui-autocomplete-plus-plus-plus)用于查看版本及检查状态。`v1.0.0` 已提交，目前等待平台检查；检查通过并同步 Manager 索引后，可按首页的 [Manager 安装说明](../README.md#通过-comfyui-manager-安装)安装。
 
 Comfy Registry 发布者为 `twinklestar`，已在 `pyproject.toml` 中配置 `PublisherId`。`.github/workflows/publish_action.yml` 仅支持手动触发，使用 GitHub Actions 仓库密钥 `REGISTRY_ACCESS_TOKEN` 发布；此密钥来自本项目发布者账号，不沿用上游身份。上传或更新 GitHub 仓库不会自动发布到 Registry。
 

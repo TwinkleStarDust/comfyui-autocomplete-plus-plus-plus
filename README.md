@@ -20,9 +20,21 @@ Autocomplete+++ 在 ComfyUI 的提示词输入框中提供标签搜索、中文�
 
 ### 安装
 
-1. 下载本仓库 ZIP，将插件放入 `ComfyUI/custom_nodes/comfyui-autocomplete-plus-plus-plus/`。
+#### 通过 ComfyUI-Manager 安装
+
+> **首次发布状态：** `v1.0.0` 已提交至 [Comfy Registry](https://registry.comfy.org/zh/publishers/twinklestar/nodes/comfyui-autocomplete-plus-plus-plus)，目前等待平台检查。检查通过并同步 Manager 索引后，可按以下步骤安装；暂时搜不到时，请使用下方的 ZIP 安装方式。
+
+1. 打开 **Manager → Custom Nodes Manager（安装自定义节点）**。
+2. 搜索 `Autocomplete+++`，也可尝试完整名称 `comfyui-autocomplete-plus-plus-plus`。
+3. 核对项目名称为 **Autocomplete+++**、发布者为 **twinklestar**，点击 **Install（安装）**。
+4. 安装完成后重启 ComfyUI，再按 `Ctrl + F5` 刷新浏览器。
+
+#### 手动安装 ZIP
+
+1. 从 [Releases](https://github.com/TwinkleStarDust/comfyui-autocomplete-plus-plus-plus/releases/latest) 下载 `comfyui-autocomplete-plus-plus-plus-v1.0.0.zip`，解压到 `ComfyUI/custom_nodes/comfyui-autocomplete-plus-plus-plus/`。
 2. 确认该目录下直接包含 `__init__.py`，重启 ComfyUI 后端，再按 `Ctrl + F5` 刷新浏览器。
-3. 将 ComfyUI 语言设为中文，在设置中搜索 `Autocomplete+++`。
+
+安装后，将 ComfyUI 语言设为中文，在设置中搜索 `Autocomplete+++`。
 
 插件使用 ComfyUI 现有 Python 环境，没有额外声明的 Python 依赖。LoRA Manager 为可选集成。
 
@@ -33,7 +45,7 @@ Autocomplete+++ 在 ComfyUI 的提示词输入框中提供标签搜索、中文�
 
 仅保留一个生效版本，避免重复注册节点与接口。内部设置 ID、节点类型和本地 API 标识保持兼容，已有设置、常用记录及工作流可以继续使用。
 
-ComfyUI-Manager 中的 `Autocomplete++` 条目对应原项目。安装本分支请使用本仓库文件；通过上游渠道更新前应备份本地修改。
+ComfyUI-Manager 中的 `Autocomplete++` 条目对应原项目。本项目请选择 **Autocomplete+++（发布者：twinklestar）**；索引尚未同步时，可使用上方的 ZIP 安装方式。
 
 </details>
 
