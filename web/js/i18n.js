@@ -1,6 +1,23 @@
 import { app } from "/scripts/app.js";
 
 const zh = {
+    "Workflow Notifications": "工作流提醒",
+    "Workflow Completion Sound": "工作流完成提示音",
+    "Workflow Sound Volume": "提示音音量",
+    "Workflow Sound Style": "提示音类型",
+    "Clear Double Chime (Original)": "清亮双音（原版）",
+    "Soft Bell": "柔和钟声",
+    "Success Arpeggio": "完成琶音",
+    "Digital Triple Beep": "电子三连音",
+    "Choose a completion sound. The test button plays the selected sound at the current volume.": "选择工作流完成时的音效。点击试听按钮可按当前音量播放所选音效。",
+    "Test Workflow Sound": "提示音试听",
+    "Play once when each queued task succeeds, including cached tasks. Errors and interruptions stay silent. Independent of the autocomplete switch.": "每个队列任务成功完成后提示一次，包括使用缓存的任务。报错和中断时不响。独立于自动补全开关。",
+    "Completion sound volume from 0 to 100. Set to 0 to mute.": "提示音音量，范围 0–100；设为 0 时静音。",
+    "Click to test the selected sound and allow audio in this browser. The ComfyUI page must remain open and unmuted.": "点击试听所选音效，同时允许浏览器播放声音。ComfyUI 页面需保持打开且未静音。",
+    "Play Test Sound": "播放试听",
+    "Test sound played.": "已播放试听音。",
+    "No sound played. Check the volume and allow audio in your browser.": "未播放声音，请检查音量并允许浏览器播放声音。",
+    "Unable to play sound. Allow audio in your browser and try again.": "无法播放声音，请允许浏览器播放声音后重试。",
     "Autocomplete Display Preview": "普通补全显示预览",
     "Wrapping on": "自动换行已开启",
     "Wrapping off": "自动换行已关闭",

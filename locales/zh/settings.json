@@ -1,4 +1,26 @@
 {
+  "ComfyUI_AutocompletePlusPlus_WorkflowCompletionSound": {
+    "name": "工作流完成提示音",
+    "tooltip": "每个队列任务成功完成后提示一次，包括使用缓存的任务。报错和中断时不响。独立于自动补全开关。"
+  },
+  "ComfyUI_AutocompletePlusPlus_WorkflowSoundVolume": {
+    "name": "提示音音量",
+    "tooltip": "提示音音量，范围 0–100；设为 0 时静音。"
+  },
+  "ComfyUI_AutocompletePlusPlus_WorkflowSoundPreview": {
+    "name": "提示音试听",
+    "tooltip": "点击试听所选音效，同时允许浏览器播放声音。ComfyUI 页面需保持打开且未静音。"
+  },
+  "ComfyUI_AutocompletePlusPlus_WorkflowSoundStyle": {
+    "name": "提示音类型",
+    "tooltip": "选择工作流完成时的音效。点击试听按钮可按当前音量播放所选音效。",
+    "options": {
+      "Ding": "清亮双音（原版）",
+      "Bell": "柔和钟声",
+      "Arpeggio": "完成琶音",
+      "Digital": "电子三连音"
+    }
+  },
   "ComfyUI_AutocompletePlusPlus_PopupPreview": {
     "name": "普通补全显示预览"
   },

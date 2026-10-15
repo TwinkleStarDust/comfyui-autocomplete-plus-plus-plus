@@ -1,4 +1,5 @@
 import { t } from "./i18n.js";
+import { previewWorkflowSound, workflowSounds } from "./workflow-sound.js";
 // Settings definitions and state management for ComfyUI-Autocomplete-Plus-Plus-Plus
  
 export const id = "ComfyUI.AutocompletePlusPlus";
@@ -58,6 +59,9 @@ export const settingValues = {
     tagWeightStep: 0.05,
     loraWeightStep: 0.05,
     enableConsoleDebugLogs: false,
+    workflowCompletionSound: true,
+    workflowSoundVolume: 35,
+    workflowSoundStyle: "Ding",
 };
 
 // Persisted setting loader from localStorage
@@ -210,6 +214,9 @@ try {
     settingValues.tagWeightStep = loadSetting("TagWeightStep", 0.05, true);
     settingValues.loraWeightStep = loadSetting("LoraWeightStep", 0.05, true);
     settingValues.enableConsoleDebugLogs = loadSetting("EnableConsoleDebugLogs", false);
+    settingValues.workflowCompletionSound = loadSetting("WorkflowCompletionSound", true);
+    settingValues.workflowSoundVolume = loadSetting("WorkflowSoundVolume", 35, true);
+    settingValues.workflowSoundStyle = loadSetting("WorkflowSoundStyle", "Ding");
 } catch (_) {}
 
 export let availableTagFiles = [];
@@ -645,6 +652,72 @@ function createPopupPreview() {
 }
 
 export function registerSettings(app) {
+    app.ui.settings.addSetting({
+        id: id + ".WorkflowCompletionSound",
+        name: t("Workflow Completion Sound"),
+        tooltip: t("Play once when each queued task succeeds, including cached tasks. Errors and interruptions stay silent. Independent of the autocomplete switch."),
+        type: "boolean",
+        defaultValue: settingValues.workflowCompletionSound,
+        category: [name, "Workflow Notifications", "Workflow Completion Sound"],
+        onChange: (value) => {
+            settingValues.workflowCompletionSound = !!value;
+            persistSetting("WorkflowCompletionSound", settingValues.workflowCompletionSound);
+        }
+    });
+    app.ui.settings.addSetting({
+        id: id + ".WorkflowSoundVolume",
+        name: t("Workflow Sound Volume"),
+        tooltip: t("Completion sound volume from 0 to 100. Set to 0 to mute."),
+        type: "slider",
+        attrs: { min: 0, max: 100, step: 1 },
+        defaultValue: settingValues.workflowSoundVolume,
+        category: [name, "Workflow Notifications", "Workflow Sound Volume"],
+        onChange: (value) => {
+            settingValues.workflowSoundVolume = Math.min(100, Math.max(0, Number(value) || 0));
+            persistSetting("WorkflowSoundVolume", settingValues.workflowSoundVolume);
+        }
+    });
+    app.ui.settings.addSetting({
+        id: id + ".WorkflowSoundStyle",
+        name: t("Workflow Sound Style"),
+        tooltip: t("Choose a completion sound. The test button plays the selected sound at the current volume."),
+        type: "combo",
+        options: workflowSounds.map(sound => ({ text: t(sound.name), value: sound.value })),
+        defaultValue: settingValues.workflowSoundStyle,
+        category: [name, "Workflow Notifications", "Workflow Sound Style"],
+        onChange: (value) => {
+            settingValues.workflowSoundStyle = value;
+            persistSetting("WorkflowSoundStyle", value);
+        }
+    });
+    app.ui.settings.addSetting({
+        id: id + ".WorkflowSoundPreview",
+        name: t("Test Workflow Sound"),
+        tooltip: t("Click to test the selected sound and allow audio in this browser. The ComfyUI page must remain open and unmuted."),
+        type: () => {
+            const container = document.createElement("div");
+            container.className = "flex flex-col gap-2";
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "p-button p-component rounded-md px-3 py-1.5";
+            button.textContent = t("Play Test Sound");
+            const status = document.createElement("span");
+            status.className = "text-sm text-muted";
+            status.setAttribute("role", "status");
+            button.addEventListener("click", async () => {
+                try {
+                    const played = await previewWorkflowSound(settingValues.workflowSoundVolume, settingValues.workflowSoundStyle);
+                    status.textContent = t(played ? "Test sound played." : "No sound played. Check the volume and allow audio in your browser.");
+                } catch (_) {
+                    status.textContent = t("Unable to play sound. Allow audio in your browser and try again.");
+                }
+            });
+            container.append(button, status);
+            return container;
+        },
+        defaultValue: "",
+        category: [name, "Workflow Notifications", "Test Workflow Sound"],
+    });
     app.ui.settings.addSetting({
         id: id + ".PopupPreview",
         name: t("Autocomplete Display Preview"),

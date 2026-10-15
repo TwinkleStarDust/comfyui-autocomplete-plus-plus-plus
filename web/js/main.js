@@ -9,6 +9,7 @@ import { setupPromptExpansionInterceptor } from "./prompt-expander.js";
 import { attachHotkeysToTextarea } from "./hotkeys.js";
 import { setupDictionariesControllerComponent, setupDictionariesControllerNodeHooks, isDictionariesControllerTextarea } from "./dictionaries-controller.js";
 import { refreshCivitaiHost, fetchLMSyntaxFormat } from "./lora-manager-provider.js";
+import { setupWorkflowSound } from "./workflow-sound.js";
 
 const extensionId = "ComfyUI.AutocompletePlusPlus";
 const extensionName = "Autocomplete+++";
@@ -774,6 +775,7 @@ app.registerExtension({
 
         await refreshAvailableFiles();
         registerSettings(app);
+        setupWorkflowSound(settingValues);
 
         engine = new TagCompleteEngine();
         if (typeof window !== "undefined") window.tagCompleteEngine = engine;
