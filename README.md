@@ -52,22 +52,39 @@ ComfyUI-Manager 中的 `Autocomplete++` 条目对应原项目。安装本分支�
 
 ## 功能介绍
 
+以下均为 **Autocomplete+++ 在本地 ComfyUI 中的实际界面**。对比图由真实截图裁剪、拼接，图外标题用于说明操作。为展示分页，部分截图将每页候选数设为 8；模型名称、候选数量和译名取决于本地文件与词库。
+
+| 查找与选择 | 模型与展开 | 编辑与配置 |
+| --- | --- | --- |
+| [中文与别名搜索](#标签补全与中文搜索) | [LoRA / Embedding](#lora-与-embedding-补全) | [权重、换位与整理](#提示词编辑与自动整理) |
+| [排序、类别与分页](#排序筛选与完整分页) | [触发词与模型详情](#触发词预设与模型详情) | [常用标签](#常用标签与个人记录) |
+| [窗口与翻译布局](#窗口宽度与翻译布局) | [Anima 画师](#anima-画师补全) | [工作流控制器](#四种工作流控制器) |
+| [本地关联标签](#本地关联标签) | [动态提示词](#动态提示词与实际展开) | [节点菜单与兼容](#节点菜单与画布兼容) |
+| [通配符文件与行浏览](#通配符文件与逐行浏览) | [展开模式与 PNG 恢复](#展开模式与-png-恢复) | [中文设置与词库](#中文设置与词库组合) |
+
 ### 标签补全与中文搜索
 
-支持搜索 Danbooru / e621 标签、别名和译名。可以输入英文原名，也可以用中文查找；候选会显示标签类别、译名及投稿数。点击百科按钮或按 `F1` 可查阅标签 Wiki。
+支持搜索 Danbooru / e621 标签、别名和译名。输入英文原名或中文名称，选中后按 `Enter` / `Tab` 插入英文标签；候选同时显示译名、投稿数和词库来源。点击「百科」或按 `F1` 可查阅标签 Wiki。
 
-合并词库保留已有名称与别名，例如：
+**输入「平沢唯」，直接找到 `hirasawa_yui`。** 原有译名与别名 `平沢唯,ゆいあず,yuihirasawa` 保留在同一词条中。
 
-```text
-hirasawa_yui → 平沢唯,ゆいあず,yuihirasawa
-```
+![中文名称搜索命中 hirasawa_yui，并显示原有译名与别名](assets/images/zh-tag-search.webp)
 
-下面是输入 `yui` 后，筛选「角色」并使用「投稿数优先」的补全组件演示。
+除了点击类别按钮，也可输入 `/character yui`、`/artist artist_name` 或 `/danbooru /artist artist_name` 限定搜索范围。[查看搜索语法](README_zh.md#限定搜索范围)。
 
-![中文搜索、角色筛选与分页](assets/images/zh-sort-category-pagination.jpg)
+### 排序、筛选与完整分页
+
+弹窗左上角可随时切换两种排序。下面使用相同的 `yui` 查询和「角色」筛选，对比首屏结果：
+
+- **投稿数优先**：完全匹配优先，其余按词库投稿数降序排列，`hirasawa_yui` 等常见角色更容易找到。
+- **匹配优先**：综合原名、译名与别名的匹配程度排列，前缀匹配通常更靠前。
+
+![相同 yui 查询在投稿数优先和匹配优先下的实际结果对比](assets/images/zh-sort-comparison.webp)
+
+类别按钮同时提供筛选和颜色图例。点击「角色」「作品」等缩小范围，再点当前类别或「全部」取消筛选。
 
 <details>
-<summary>查看类别颜色</summary>
+<summary>类别颜色代表什么？</summary>
 
 | 颜色 | 类别 | 常见内容 |
 | --- | --- | --- |
@@ -81,76 +98,154 @@ hirasawa_yui → 平沢唯,ゆいあず,yuihirasawa
 
 </details>
 
-### 排序、筛选与完整分页
-
-弹窗顶部可切换两种排序：
-
-- **匹配优先**：按原名、译名和别名的匹配程度排列，前缀匹配通常更靠前。
-- **投稿数优先**：完全匹配优先，其余按词库投稿数降序排列，方便找到常见角色、作品和画师。
-
-点击类别按钮可缩小范围，再点当前类别或「全部」取消筛选。每页可显示 5–50 项，使用翻页按钮、`PageUp` / `PageDown` 浏览全部匹配结果。
-
-翻页和筛选复用当前结果，仅绘制当前页。补全窗口支持拖动调宽、自动换行，以及行内、左右分栏、上下排列三种布局。
-
-### LoRA、Embedding 与触发词
-
-输入 `<lora:` 选择 LoRA，输入 `embedding:` 或 `emb:` 选择 Embedding。支持子目录浏览、缩略图预览和路径补全。
-
-安装 [ComfyUI-Lora-Manager](https://github.com/willmiao/ComfyUI-Lora-Manager) 后，还可用 `<trigger:` 查找当前工作流所加载 LoRA 的触发词，一次插入整组预设，并查看模型详情、推荐参数和图片生成信息。
+**每页 5–50 项，全部结果均可翻页浏览。** 按钮和 `PageUp` / `PageDown` 切换整页，上下方向键也可跨页；单页数量不会截断总结果。
 
 <details>
-<summary>查看触发词与模型详情效果图</summary>
+<summary>查看第 2 页：198 个角色结果分为 25 页</summary>
 
-以下截图来自 Autocomplete+++ 的实际中文界面，使用本地模型与 LoRA Manager 展示。
+![yui 角色结果的第 2 页，工具栏显示共 198 项和上一页、下一页按钮](assets/images/zh-pagination.webp)
 
-**触发词补全与整组预设**
-
-![Autocomplete+++ 中文触发词补全、模型预览与整组提示词预设](assets/images/zh-lora-trigger-preview.webp)
-
-**中文模型详情**
-
-![Autocomplete+++ 中文 LoRA 详情、预设、触发词与图库](assets/images/zh-lora-details.webp)
+翻页、排序和筛选复用当前结果，只绘制当前页，不重新读取 CSV 或重做全词库搜索。新查询的耗时仍取决于词库大小与设备。
 
 </details>
 
-### 动态提示词与通配符
+### 窗口宽度与翻译布局
 
-在提示词中写入备选项，生成时按所选模式展开：
+原名与译名支持 **左右分栏、行内显示、上下排列**。长译名可以自动换行，设置页提供随选项更新的显示预览。
 
-```text
-{red hair | blue hair | green hair}
-```
+![左右分栏、行内显示和上下排列三种真实补全布局](assets/images/zh-popup-layouts.webp)
 
-也可以使用权重、多选组合，或从文本文件抽取内容：
+窗口可在设置中调整为 280–1600 px，也可拖动右下角调宽并保存，实际宽度不超过可用视口。关闭换行后，可悬停查看被截断的文字。
 
-```text
-{3::sunny | 1::rainy}
-{2$$red ribbons | blue ribbons | green hairband}
-__backgrounds/scenery__
-```
+### LoRA 与 Embedding 补全
 
-支持随机、跟随种子、保持上次选择；通配符另有顺序模式。同一次生成中的多次处理复用一致的选择。[查看语法与模式](README_zh.md#动态提示词与通配符)。
+输入 `<lora:` 查找本地 LoRA，输入 `embedding:` 或 `emb:` 查找 Embedding。选择模型时可显示本地缩略图；预览卡片位置和动画播放方式均可配置。
+
+![输入 lora GUMI 后显示本地 LoRA 候选及模型缩略图](assets/images/zh-lora-completion.webp)
+
+<details>
+<summary>查看 LoRA 子目录与 Embedding 列表</summary>
+
+![LoRA 子目录浏览与 embedding 前缀补全](assets/images/zh-model-browsing.webp)
+
+LoRA 支持「自动」「仅文件名」「完整路径」三种路径补全方式。自动模式会在遇到重名模型时使用相对路径。[模型与路径说明](README_zh.md#lora-与-embedding)。
+
+</details>
+
+### 触发词、预设与模型详情
+
+安装并启用可选的 [ComfyUI-Lora-Manager](https://github.com/willmiao/ComfyUI-Lora-Manager) 后，输入 `<trigger:` 可检索 **当前工作流已加载 LoRA** 的触发词。预览中可逐项选择，也可点击「插入整组」使用完整提示词预设。
+
+![Autocomplete+++ 中文触发词补全、模型预览与整组提示词预设](assets/images/zh-lora-trigger-preview.webp)
+
+<details>
+<summary>查看中文模型详情、推荐参数与图库</summary>
+
+选中触发词后按 `F1` 或点击信息按钮，可查看模型信息、推荐强度、CLIP 参数、触发词、预设和图库。触发词与预设支持复制，图片支持查看可用的生成参数；底部可跳转到 LoRA Manager。
+
+![Autocomplete+++ 中文 LoRA 详情、预设、触发词与图库](assets/images/zh-lora-details.webp)
+
+具体内容取决于 LoRA Manager 版本和模型已有元数据。多个模型共用触发词时，会先显示模型选择菜单。[集成说明](README_zh.md#lora-manager-集成)。
+
+</details>
+
+### Anima 画师补全
+
+Anima 模式生效时，输入 `@` 可搜索画师；从普通标签搜索选择画师，也会自动添加 `@` 前缀。
+
+![启用 Anima 模式后输入 torino 前缀，显示带 at 前缀的画师候选](assets/images/zh-anima-artist.webp)
+
+默认自动检测工作流模型，也可在「Anima 艺术家前缀模式」中强制启用或关闭。图中演示的是启用模式后的 `@torino` 查询。
+
+### 动态提示词与实际展开
+
+在文本中写入备选项，展开引擎会在运行前按所选模式解析。支持随机选择、权重、多项抽取和自定义分隔符：
+
+| 写法 | 作用 |
+| --- | --- |
+| `{red hair \| blue hair \| green hair}` | 抽取一个选项 |
+| `{3::sunny \| 1::rainy}` | 按 3:1 的权重抽取 |
+| `{2$$red ribbons \| blue ribbons \| green hairband}` | 抽取两个不同选项 |
+| `{1-3$$ and $$apples \| bananas \| oranges}` | 抽取 1–3 项，用 ` and ` 连接 |
+
+下图上方为输入，下方为 **同次实际运行的展开结果**；最后一行同时演示了从通配符文件取出 `forest`。
+
+![动态表达式运行前与运行后的实际文本对比，展示权重、多选、自定义分隔符和通配符](assets/images/zh-dynamic-expansion.webp)
+
+截图使用 Text (Multiline) 与 Show Text 🐍 节点查看文本结果，后者是演示环境中的辅助节点，不是本插件新增节点。[完整语法](README_zh.md#动态提示词与通配符)。
+
+### 通配符文件与逐行浏览
+
+输入 `__` 浏览通配符文件与目录。文件名后追加 `/`，例如 `__autocomplete_demo/scenery/`，可直接查看其中每一行；选择完整的 `__autocomplete_demo/scenery__` 则保留为运行时抽取。
+
+![通配符文件补全与文件内 forest、seaside、city street 三行候选](assets/images/zh-wildcard-browser.webp)
+
+通配符使用 UTF-8 `.txt`，每行一个候选。支持本插件的 `wildcards/`、`ComfyUI/wildcards/` 及其他自定义节点的 `wildcards/`，也可以嵌套进动态表达式。
+
+复现截图可将 [scenery.txt](docs/examples/scenery.txt) 放到 `ComfyUI/wildcards/autocomplete_demo/scenery.txt`。
+
+### 展开模式与 PNG 恢复
+
+全局设置和画布控制器都可选择展开模式。同一次生成中的多次处理会复用一致选择，便于分阶段处理或细节修复。
+
+| 模式 | 行为 |
+| --- | --- |
+| 随机 | 每次生成重新抽取 |
+| 跟随种子 | 按生成种子决定选择 |
+| 保持上次选择 | 主种子不变时沿用上次选择 |
+| 按顺序 | 依次使用文件行，仅适用于通配符 |
+
+<details>
+<summary>查看模式菜单和实验性 PNG 恢复入口</summary>
+
+![工作流控制器的通配符模式菜单，含随机、跟随种子、保持上次选择和按顺序](assets/images/zh-expansion-modes.webp)
+
+「导入 PNG 时恢复上次选择」为默认关闭的实验功能。在「保持上次选择」模式下，可从含所需元数据的 PNG 恢复动态选择及本地通配符选项，需要本地存在对应通配符。
+
+![实验性 PNG 恢复开关、轻量监听模式与中文说明](assets/images/zh-png-restore-settings.webp)
+
+此图展示设置入口。普通 JSON 工作流、缺少所需元数据的 PNG 不支持恢复；恢复选择也不保证跨设备生成的图片完全一致。[适用条件与监听模式](README_zh.md#展开模式)。
+
+</details>
 
 ### 提示词编辑与自动整理
 
 `Ctrl + ↑ / ↓` 调整完整标签、Embedding 或 LoRA 的权重；`Ctrl + ← / →` 按标签移动，`Alt + ← / →` 交换相邻标签。
 
-离开输入框时可自动整理逗号和空格、转换下划线，并保护模型、通配符等语法。花括号支持自动闭合和包裹选区。
+离开输入框时可自动整理逗号和空格、转换下划线，并保护模型、通配符等语法。花括号支持自动闭合、包裹选区、成对删除，以及跳过已有右括号。
 
-```text
-整理前：1girl,,long_hair,solo,
-整理后：1girl, long hair, solo
-```
+![实际输入框中的格式整理前后、权重调整、标签换位和花括号包裹](assets/images/zh-prompt-editing.webp)
 
-常用标签会记录使用次数，达到阈值后可优先显示。阈值、有效期、容量和清除操作均可在设置中调整。
+标签 / Embedding 与 LoRA 有独立权重步长；逗号、行末处理和下划线转换可分别开关，也可配置保留下划线的标签。[编辑与格式化规则](README_zh.md#提示词编辑与格式化)。
+
+### 常用标签与个人记录
+
+达到个人使用次数阈值后，候选会显示「常用」徽标。开启常用优先时，最多 3 个常用标签可置顶；它与词库投稿数排序是独立设置。
+
+![实际选择 long hair 达到阈值后，候选显示常用徽标并排在前面](assets/images/zh-favorites.webp)
+
+最少使用次数、有效期、历史容量和清除历史均可配置；有效期为 `0` 表示永不过期。备份个人记录时保留 `data/user_data.json`。
 
 ### 本地关联标签
 
 点击提示词中的 Danbooru 标签，或按 `Ctrl + Shift + Space`，查看共现关系推荐。选择候选可插入到当前标签后，已有标签会灰显并支持定位。
 
-面板支持横向 / 纵向布局和连续插入。此功能使用本地关联索引；如果下载包未包含索引，可按[构建说明](docs/DICTIONARIES.md#关联索引构建)生成。
+下图从 `scenery` 打开关联面板，开启「插入后保持面板打开」后选择 `tree`；提示词已更新，`tree` 与原本存在的 `cloud` 均显示为灰色。
 
-### 工作流控制与节点兼容
+![scenery 的真实关联标签，插入 tree 后保持打开，已有词条灰显](assets/images/zh-related-tags.webp)
+
+<details>
+<summary>查看纵向列表与关联数据说明</summary>
+
+![关联面板切换为纵向列表，保留灰色已有标签与独立百科入口](assets/images/zh-related-vertical.webp)
+
+工具栏可切换横向 / 纵向布局。关联候选按本地共现数据计算的相似度排序，可配置 5–100 项，且限于当前加载的 Danbooru 词库。部分标签没有关联记录。
+
+此功能需要本地关联索引；如果下载包未包含索引，可按[构建说明](docs/DICTIONARIES.md#关联索引构建)生成。
+
+</details>
+
+### 四种工作流控制器
 
 四种控制器直接放在画布上即可为当前工作流覆盖设置，无须连线：
 
@@ -161,7 +256,50 @@ __backgrounds/scenery__
 | 插件集成 | LoRA / Embedding、路径和 LoRA Manager |
 | 词典 | 主词库、附加词库、翻译文件 |
 
-节点右键菜单还可单独启用或禁用补全，以及按节点类型忽略或强制接管。原生 Note 节点默认不启用补全。
+![画布上的通配符与动态提示词、格式整理、插件集成和词典四种中文控制器](assets/images/zh-workflow-controllers.webp)
+
+<details>
+<summary>查看多个同类控制器的生效状态</summary>
+
+![两个同类控制器并存时显示未生效与生效中状态徽标](assets/images/zh-controller-priority.webp)
+
+选择「默认（跟随全局设置）」即可继续使用全局值。同类控制器并存时，最后修改的优先；Node 2.0 会显示生效状态，点击未生效徽标可切换控制权。静音或绕过控制器会让出控制权。
+
+控制器还提供可选直通端口，供工作流整理使用。[控制器与优先级](README_zh.md#工作流控制与节点菜单)。
+
+</details>
+
+### 节点菜单与画布兼容
+
+经典画布的节点右键菜单提供 `Autocomplete+++` 子菜单，可以忽略某类节点、强制接管某类节点，或只对当前节点禁用补全。原生 Note 节点默认不启用补全。
+
+![经典画布中的真实 Autocomplete+++ 节点子菜单](assets/images/zh-node-menu.webp)
+
+<details>
+<summary>查看经典 LiteGraph 画布中的补全效果</summary>
+
+插件支持经典 LiteGraph 与 Node 2.0 文本输入框。前文多数截图为 Node 2.0，下图为经典画布。
+
+![经典 LiteGraph 画布中的中文标签补全、投稿数与类别筛选](assets/images/zh-classic-compatibility.webp)
+
+</details>
+
+### 中文设置与词库组合
+
+在 ComfyUI 设置中打开 `Autocomplete+++`，可分别选择主标签、附加词库和翻译文件，独立控制中文搜索与译名显示。支持 Danbooru、e621 和自定义 CSV。
+
+![实际中文设置中的主词库列表、翻译搜索与显示开关](assets/images/zh-dictionary-settings.webp)
+
+`danbooru_merged_zh.csv` 已内嵌译名，翻译文件可选「无」。额外选择 `danbooru_zh.csv` 等翻译文件时，其非空译名会覆盖内嵌译名；工作流中的词典控制器也可覆盖全局文件选择。
+
+<details>
+<summary>查看中文设置总览</summary>
+
+![Autocomplete+++ 中文设置中的补全开关、插入按键、权重步长、节点名单与显示选项](assets/images/zh-settings-overview.webp)
+
+[完整设置速查](README_zh.md#设置速查) · [CSV 格式与编码](docs/DICTIONARIES.md)
+
+</details>
 
 ## 常用快捷键
 
