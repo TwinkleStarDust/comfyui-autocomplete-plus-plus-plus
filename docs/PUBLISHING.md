@@ -46,6 +46,6 @@ git add -f tags/translations/your_dictionary.csv
 
 GitHub 仓库地址为 [TwinkleStarDust/comfyui-autocomplete-plus-plus-plus](https://github.com/TwinkleStarDust/comfyui-autocomplete-plus-plus-plus)，初次上传设为私有仓库。
 
-Comfy Registry 发布者身份尚未配置，元数据已移除原作者的发布者 ID 及远程图标 / 横幅地址。`.github/workflows/publish_action.yml` 仅支持手动触发；使用前需配置自己的发布者与 `REGISTRY_ACCESS_TOKEN`。上传或更新 GitHub 仓库不会自动发布到 Registry。
+Comfy Registry 发布者为 `twinklestar`，已在 `pyproject.toml` 中配置 `PublisherId`。`.github/workflows/publish_action.yml` 仅支持手动触发，使用 GitHub Actions 仓库密钥 `REGISTRY_ACCESS_TOKEN` 发布；此密钥来自本项目发布者账号，不沿用上游身份。上传或更新 GitHub 仓库不会自动发布到 Registry。
 
 保留 [LICENSE](../LICENSE) 中的原作者版权与 MIT 条款，并保留[数据来源](DICTIONARIES.md#数据来源与许可)说明。

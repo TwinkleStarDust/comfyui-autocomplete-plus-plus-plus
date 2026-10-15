@@ -1,6 +1,6 @@
 [project]
 name = "comfyui-autocomplete-plus-plus-plus"
-description = "Chinese-enhanced tag autocomplete for ComfyUI with sorting, pagination, category filters, and related tags."
+description = "Chinese-enhanced tag autocomplete for ComfyUI with sorting, pagination, category filters, related tags, and workflow completion sounds. Danbooru snapshot: 2026-10-12."
 version = "1.0.0"
 license = {file = "LICENSE"}
 dependencies = []
@@ -10,4 +10,5 @@ Repository = "https://github.com/TwinkleStarDust/comfyui-autocomplete-plus-plus-
 Upstream = "https://github.com/michikora/ComfyUI-Autocomplete-Plus-Plus"
 
 [tool.comfy]
+PublisherId = "twinklestar"
 DisplayName = "Autocomplete+++"
