@@ -14,7 +14,7 @@
 
 Autocomplete+++ 在 ComfyUI 的提示词输入框中提供标签搜索、中文名称、LoRA / Embedding 补全，以及提示词展开和编辑工具。支持经典 LiteGraph 与 Node 2.0。
 
-项目基于 [Autocomplete++](https://github.com/michikora/ComfyUI-Autocomplete-Plus-Plus) 改造，在原有功能上加入中文 UI、双排序、完整分页、类别筛选、可调补全布局和本地关联标签。默认使用 `danbooru_merged_zh.csv`，包含 **296,884 个去重标签**，Danbooru 词库截止至 **2026.10.12**。
+项目是 [Autocomplete++](https://github.com/michikora/ComfyUI-Autocomplete-Plus-Plus) 的 Fork，在原有功能上加入中文 UI、双排序、完整分页、类别筛选、可调补全布局和本地关联标签。默认使用 `danbooru_merged_zh.csv`，包含 **296,884 个去重标签**，Danbooru 词库截止至 **2026.10.12**。
 
 ## 快速开始
 
@@ -22,7 +22,7 @@ Autocomplete+++ 在 ComfyUI 的提示词输入框中提供标签搜索、中文�
 
 #### 通过 ComfyUI-Manager 安装
 
-> **首次发布状态：** `v1.0.0` 已提交至 [Comfy Registry](https://registry.comfy.org/zh/publishers/twinklestar/nodes/comfyui-autocomplete-plus-plus-plus)，目前等待平台检查。检查通过并同步 Manager 索引后，可按以下步骤安装；暂时搜不到时，请使用下方的 ZIP 安装方式。
+> **Registry 状态：** `v1.0.0` 已发布至 [Comfy Registry](https://registry.comfy.org/zh/publishers/twinklestar/nodes/comfyui-autocomplete-plus-plus-plus)，安装接口可用；自动扫描状态目前为 `Flagged`，尚未标记为检查通过。[查看扫描说明](docs/PUBLISHING.md#registry-扫描状态)。Manager 中暂时搜不到或无法安装时，可使用下方的 ZIP 安装方式。
 
 1. 打开 **Manager → Custom Nodes Manager（安装自定义节点）**。
 2. 搜索 `Autocomplete+++`，也可尝试完整名称 `comfyui-autocomplete-plus-plus-plus`。
