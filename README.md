@@ -31,9 +31,9 @@ Autocomplete+++ 在 ComfyUI 的提示词输入框中提供标签搜索、中文�
 
 #### 通过 ComfyUI-Manager 安装
 
-GitHub 当前版本为 **v1.1.0**，请通过下方 ZIP 安装或更新；Registry 独立发布，目前保留 v1.0.0。
+GitHub 当前版本为 **v1.1.0**，同版已提交 Comfy Registry。Registry 检查与 Manager 索引同步需要时间；暂未显示新版时，可使用下方 ZIP 安装。
 
-> **Registry 状态：** `v1.0.0` 已发布至 [Comfy Registry](https://registry.comfy.org/zh/publishers/twinklestar/nodes/comfyui-autocomplete-plus-plus-plus)，安装接口可用；自动扫描状态目前为 `Flagged`，尚未标记为检查通过。[查看扫描说明](docs/PUBLISHING.md#registry-扫描状态)。Manager 中暂时搜不到或无法安装时，可使用下方的 ZIP 安装方式。
+> [Comfy Registry 项目页](https://registry.comfy.org/zh/publishers/twinklestar/nodes/comfyui-autocomplete-plus-plus-plus)可查看版本及检查状态。[发布流程说明](docs/PUBLISHING.md#registry-扫描状态)。
 
 1. 打开 **Manager → Custom Nodes Manager（安装自定义节点）**。
 2. 搜索 `Autocomplete+++`，也可尝试完整名称 `comfyui-autocomplete-plus-plus-plus`。

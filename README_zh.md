@@ -4,7 +4,7 @@
 
 本指南将上游 Autocomplete++ 的功能、语法、快捷键和设置说明译为中文，并结合 Autocomplete+++ 的交互与词库整理。初次使用请先查看[安装与快速配置](README.md#快速开始)。新安装默认使用 `danbooru_ffdkj.csv`，附带 332,385 条标签的快照，可离线使用并后续更新。旧合并词库 `danbooru_merged_zh.csv` 仍保留，数据截止至 **2026.10.12**。
 
-**Manager 安装：** 在 **Manager → Custom Nodes Manager** 搜索 `Autocomplete+++`，选择发布者 **twinklestar** 的项目安装，然后重启 ComfyUI 并按 `Ctrl + F5` 刷新。当前版本的 Registry 自动扫描状态为 `Flagged`，安装接口可用，详见[扫描说明](docs/PUBLISHING.md#registry-扫描状态)；暂时搜不到或无法安装时，请使用首页的 [ZIP 安装方式](README.md#手动安装-zip)。
+**Manager 安装：** 在 **Manager → Custom Nodes Manager** 搜索 `Autocomplete+++`，选择发布者 **twinklestar** 的项目安装，然后重启 ComfyUI 并按 `Ctrl + F5` 刷新。v1.1.0 已提交 Registry，平台检查及 Manager 索引同步可能有延迟；状态以 [Registry 项目页](https://registry.comfy.org/zh/publishers/twinklestar/nodes/comfyui-autocomplete-plus-plus-plus)为准。暂时搜不到新版时，请使用首页的 [ZIP 安装方式](README.md#手动安装-zip)。
 
 各项功能的实际中文界面、排序与布局对比、动态提示词运行结果，见首页的[功能图解](README.md#功能介绍)。
 

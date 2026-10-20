@@ -49,7 +49,7 @@ git add -f tags/translations/your_dictionary.csv
 
 升级保留用户已保存的设置；改用 ffdkj 时可在更新面板点击「使用此词库」。更新后重启 ComfyUI 后端并按 `Ctrl + F5`。`Tab` 默认行为改为切换排序，需要旧操作时可设为「插入候选」。
 
-本次版本发布到 GitHub Releases。Registry 仍为独立发布渠道，查看其实际版本后再选择安装方式。
+v1.1.0 已发布到 GitHub Releases，并通过现有 GitHub Actions 流程提交至 Comfy Registry。两个渠道分别发布，Registry 还需完成平台检查和 Manager 索引同步。
 
 ## 项目与 Registry 元数据
 
@@ -65,9 +65,8 @@ Comfy Registry 发布者为 `twinklestar`，已在 `pyproject.toml` 中配置 `P
 
 ## Registry 扫描状态
 
-截至 2026-10-16，`v1.0.0` 的自动扫描状态为 `Flagged`，尚未标记为检查通过。扫描记录命中以下调用：
+v1.1.0 已于 2026-10-20 上传，安装包已核验，包含默认 ffdkj 词库和本地关联索引。各版本的实时检查状态以 [Registry 项目页](https://registry.comfy.org/zh/publishers/twinklestar/nodes/comfyui-autocomplete-plus-plus-plus)为准。
 
-- `modules/related_tags.py` 与 `scripts/build_related_index.py` 中的 `sqlite3.connect()`，用于读取本地关联词索引及离线构建索引。
-- `web/js/workflow-sound.js` 中的 Web Audio `.connect()`，用于连接浏览器内的音频节点、合成提示音。
+`Pending` 表示等待平台自动检查，不需要使用者确认；`Active` 表示版本已启用。平台检查完成后，Manager 仍可能需要时间同步索引。
 
-扫描规则将这些调用归为数据库或网络操作。Registry 安装接口已确认可返回 `v1.0.0` 下载地址；Manager 的最终可见性和安装权限取决于其版本及安全策略。可按首页的 [Manager 安装说明](../README.md#通过-comfyui-manager-安装)尝试，或使用 ZIP 安装。扫描标记需由平台复核，仓库迁移不会自动解除。
+GitHub Release 不会自动触发 Registry 发布：当前工作流只接受手动触发，使用已保存的仓库密钥上传。维护者可直接运行该流程，无需每次重新创建密钥。
