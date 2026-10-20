@@ -179,6 +179,22 @@ html.light, html[data-theme="light"],
 .ac-related-tag small { color: var(--ac-meta-text-color); overflow-wrap: anywhere; }
 .ac-related-existing .ac-related-tag { opacity: 0.45; }
 .ac-related-existing .ac-related-name { color: var(--ac-meta-text-color) !important; }
+
+.acCandidateExisting .acListItem { color: var(--ac-meta-text-color) !important; opacity: 0.5; }
+.acCandidateWeight {
+    flex: 0 0 auto;
+    align-self: center;
+    margin: 0 8px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: var(--ac-results-hover);
+    color: var(--ac-meta-text-color);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.acCandidateWeight[hidden] { display: none; }
+.acCandidateHint { display: block; padding: 5px 10px; color: var(--ac-meta-text-color); font-size: 11px; }
 .ac-related-wiki { margin-right: 6px; color: var(--ac-meta-text-color); font-size: 10px; white-space: nowrap; }
 .ac-related-footer { flex: none; padding: 5px 8px; border-top: 1px solid var(--ac-results-border-color); color: var(--ac-meta-text-color); }
 .ac-related-status { padding: 8px; color: var(--ac-meta-text-color); }

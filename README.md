@@ -14,13 +14,24 @@
 
 Autocomplete+++ 在 ComfyUI 的提示词输入框中提供标签搜索、中文名称、LoRA / Embedding 补全，以及提示词展开和编辑工具。支持经典 LiteGraph 与 Node 2.0。
 
-项目是 [Autocomplete++](https://github.com/michikora/ComfyUI-Autocomplete-Plus-Plus) 的 Fork，在原有功能上加入中文 UI、双排序、完整分页、类别筛选、可调补全布局和本地关联标签。默认使用 `danbooru_merged_zh.csv`，包含 **296,884 个去重标签**，Danbooru 词库截止至 **2026.10.12**。
+项目是 [Autocomplete++](https://github.com/michikora/ComfyUI-Autocomplete-Plus-Plus) 的 Fork，在原有功能上加入中文 UI、双排序、完整分页、类别筛选、可调补全布局和本地关联标签。新安装默认使用 ffdkj 中文词库，附带 **332,385 条标签**的可用快照，支持手动和每日自动更新。旧合并词库仍保留，其数据截止至 **2026.10.12**。
+
+## v1.1.0 更新
+
+- 输入搜索改为预处理与分批执行，减少连续打字时的卡顿；中文输入法组词期间暂停补全。
+- `Tab` 默认切换排序；普通补全和关联面板均支持 `Shift＋滚轮` 预览权重，确认后生效。
+- 修复普通候选的已有标签灰显；关联面板可直接更新已有标签的权重，并保留撤销。
+- 默认使用 ffdkj 中文词库，加入更新面板；完善提示音说明与设置截图。
+
+[完整更新日志](CHANGELOG.md) · [下载 v1.1.0](https://github.com/TwinkleStarDust/comfyui-autocomplete-plus-plus-plus/releases/tag/v1.1.0)
 
 ## 快速开始
 
 ### 安装
 
 #### 通过 ComfyUI-Manager 安装
+
+GitHub 当前版本为 **v1.1.0**，请通过下方 ZIP 安装或更新；Registry 独立发布，目前保留 v1.0.0。
 
 > **Registry 状态：** `v1.0.0` 已发布至 [Comfy Registry](https://registry.comfy.org/zh/publishers/twinklestar/nodes/comfyui-autocomplete-plus-plus-plus)，安装接口可用；自动扫描状态目前为 `Flagged`，尚未标记为检查通过。[查看扫描说明](docs/PUBLISHING.md#registry-扫描状态)。Manager 中暂时搜不到或无法安装时，可使用下方的 ZIP 安装方式。
 
@@ -31,7 +42,7 @@ Autocomplete+++ 在 ComfyUI 的提示词输入框中提供标签搜索、中文�
 
 #### 手动安装 ZIP
 
-1. 从 [Releases](https://github.com/TwinkleStarDust/comfyui-autocomplete-plus-plus-plus/releases/latest) 下载 `comfyui-autocomplete-plus-plus-plus-v1.0.0.zip`，解压到 `ComfyUI/custom_nodes/comfyui-autocomplete-plus-plus-plus/`。
+1. 从 [Releases](https://github.com/TwinkleStarDust/comfyui-autocomplete-plus-plus-plus/releases/latest) 下载 `comfyui-autocomplete-plus-plus-plus-v1.1.0.zip`，解压到 `ComfyUI/custom_nodes/comfyui-autocomplete-plus-plus-plus/`。
 2. 确认该目录下直接包含 `__init__.py`，重启 ComfyUI 后端，再按 `Ctrl + F5` 刷新浏览器。
 
 安装后，将 ComfyUI 语言设为中文，在设置中搜索 `Autocomplete+++`。
@@ -53,18 +64,26 @@ ComfyUI-Manager 中的 `Autocomplete++` 条目对应原项目。本项目请选�
 
 | 设置 | 推荐值 |
 | --- | --- |
-| 主标签文件 | `danbooru_merged_zh.csv` |
+| 主标签文件 | `danbooru_ffdkj.csv`（新安装默认） |
 | 标签翻译文件 | `无`，使用主词库内嵌译名 |
 | 按翻译 / 中文名称搜索 | 开启 |
 | 在补全候选中显示翻译 | 开启 |
 
-默认主词库为 `danbooru_merged_zh.csv`，已内嵌中文译名。已有安装若保留了其他词库设置，可在此切换；工作流中若有「词典控制器」，将其设为跟随全局，或选择相同文件。
+安装包已附带 ffdkj 中文快照，无需联网下载即可搜索。升级会保留原有词库选择；想改用新默认词库时，在此选择 `danbooru_ffdkj.csv`，或在下方更新面板点击「使用此词库」。工作流中的「词典控制器」可覆盖全局选择，应设为跟随全局或选择相同文件。
 
-配置后可以输入 `long hair`、`长发` 或 `yui` 试用补全。选中候选后，按 `Enter` / `Tab` 插入对应英文标签。
+配置后可以输入 `long hair`、`长发` 或 `yui` 试用补全。选中候选后，按 `Enter` 或点击插入对应英文标签；`Tab` 默认切换排序。
+
+### ffdkj 词库与更新
+
+在 **Autocomplete+++ → 标签与词典 → ffdkj 中文词库** 中检查版本、安装更新、重新下载或切换主词库。随包快照来自上游 `v2026-10-11` Release，转换为 UTF-8 无 BOM 的五列 CSV，并补入旧合并词库中的同名别名。
+
+![ffdkj 中文词库的文件选择、版本信息和更新按钮](assets/images/zh-ffdkj-updater-v1.1.webp)
+
+每日自动更新默认关闭，图中为已开启的本机配置。开启后，在 ComfyUI 页面打开期间每 24 小时最多检查一次；更新后直接重载补全数据，下载失败继续使用已有词库。数据跟随 [ffdkj 的最新 GitHub Release CSV](https://github.com/ffdkj/ffdkj-Danbooru_Tag-Chinese-English-Translation-Table/releases)，与每日更新的 SQLite 数据库可能有时间差。[更新与数据格式](docs/DICTIONARIES.md#ffdkj-词库与更新)。
 
 ## 功能介绍
 
-以下均为 **Autocomplete+++ 在本地 ComfyUI 中的实际界面**。对比图由真实截图裁剪、拼接，图外标题用于说明操作。为展示分页，部分截图将每页候选数设为 8；模型名称、候选数量和译名取决于本地文件与词库。
+以下均为 **Autocomplete+++ 在本地 ComfyUI 中的实际界面**。新版交互图使用独立演示输入框，补全与关联面板由插件实际生成；对比图由真实截图裁剪、拼接，图外标题用于说明操作。为展示分页，部分截图将每页候选数设为 8；模型名称、候选数量和译名取决于本地文件与词库；早期示例保留了旧合并词库的译名。
 
 | 查找与选择 | 模型与展开 | 编辑与配置 |
 | --- | --- | --- |
@@ -76,9 +95,15 @@ ComfyUI-Manager 中的 `Autocomplete++` 条目对应原项目。本项目请选�
 
 ### 标签补全与中文搜索
 
-支持搜索 Danbooru / e621 标签、别名和译名。输入英文原名或中文名称，选中后按 `Enter` / `Tab` 插入英文标签；候选同时显示译名、投稿数和词库来源。点击「百科」或按 `F1` 可查阅标签 Wiki。
+支持搜索 Danbooru / e621 标签、别名和译名。加载词库后先预处理搜索文本；输入时分批搜索，并取消过时查询，中文组词确认后再显示结果。所有匹配项仍可分页浏览。输入英文原名或中文名称，选中后按 `Enter` 或点击插入英文标签；候选同时显示译名、投稿数和词库来源。提示词中已有的标签会灰显，正在编辑的当前词条不计入重复。点击「百科」或按 `F1` 可查阅标签 Wiki。
 
-**输入「平沢唯」，直接找到 `hirasawa_yui`。** 原有译名与别名 `平沢唯,ゆいあず,yuihirasawa` 保留在同一词条中。
+`Tab` 可在「匹配优先 / 投稿数优先」之间切换；也可在设置中改为插入候选或关闭。悬停词条时按住 `Shift` 滚动鼠标，可预览本次插入权重，上滚增加、下滚减少，确认插入时生效。此功能默认开启，滚轮步进默认 `0.05`，可独立调整。
+
+下图中提示词已有 `(blue hair:1.2)`，因此 `blue_hair` 灰显；悬停调权后显示 `×1.05`。普通补全仍按原有方式插入，灰显不禁用选择。
+
+![普通补全中的已有标签灰显、候选权重预览、排序、类别与分页](assets/images/zh-candidate-weight-v1.1.webp)
+
+在旧合并词库中输入「平沢唯」，可找到 `hirasawa_yui`；原有译名与别名 `平沢唯,ゆいあず,yuihirasawa` 保留在同一词条中。
 
 ![中文名称搜索命中 hirasawa_yui，并显示原有译名与别名](assets/images/zh-tag-search.webp)
 
@@ -242,16 +267,18 @@ Anima 模式生效时，输入 `@` 可搜索画师；从普通标签搜索选择
 
 点击提示词中的 Danbooru 标签，或按 `Ctrl + Shift + Space`，查看共现关系推荐。选择候选可插入到当前标签后，已有标签会灰显并支持定位。
 
-下图从 `scenery` 打开关联面板，开启「插入后保持面板打开」后选择 `tree`；提示词已更新，`tree` 与原本存在的 `cloud` 均显示为灰色。
+下图从 `scenery` 打开面板。提示词已有 `(cloud:1.2)`，对灰色 `cloud` 上滚一步后预览 `×1.25`；确认会更新原词条，可用 `Ctrl + Z` 撤销。未调权时点击灰色词条仍会定位原位置。
 
-![scenery 的真实关联标签，插入 tree 后保持打开，已有词条灰显](assets/images/zh-related-tags.webp)
+![关联面板中的关联度排序、固定展开与已有 cloud 的权重预览](assets/images/zh-related-weight-v1.1.webp)
 
 <details>
 <summary>查看纵向列表与关联数据说明</summary>
 
 ![关联面板切换为纵向列表，保留灰色已有标签与独立百科入口](assets/images/zh-related-vertical.webp)
 
-工具栏可切换横向 / 纵向布局。关联候选按本地共现数据计算的相似度排序，可配置 5–100 项，且限于当前加载的 Danbooru 词库。部分标签没有关联记录。
+工具栏可切换横向 / 纵向布局，以及「关联度 / 投稿数」排序；`Tab` 默认切换排序。可配置显示 5–100 项，先对全部关联结果排序，再取显示数量，且限于当前加载的 Danbooru 词库。部分标签没有关联记录。
+
+关联窗口也支持 `Shift＋滚轮` 预览权重。已有的灰色词条未调权时点击定位；预览新权重后确认，会更新已有词条，避免重复插入。
 
 此功能需要本地关联索引；如果下载包未包含索引，可按[构建说明](docs/DICTIONARIES.md#关联索引构建)生成。
 
@@ -300,14 +327,14 @@ Anima 模式生效时，输入 `@` 可搜索画师；从普通标签搜索选择
 
 在 ComfyUI 设置中打开 `Autocomplete+++`，可分别选择主标签、附加词库和翻译文件，独立控制中文搜索与译名显示。支持 Danbooru、e621 和自定义 CSV。
 
-![实际中文设置中的主词库列表、翻译搜索与显示开关](assets/images/zh-dictionary-settings.webp)
+词库文件选择和更新入口见上方的 [ffdkj 词库与更新](#ffdkj-词库与更新)。
 
-`danbooru_merged_zh.csv` 已内嵌译名，翻译文件可选「无」。额外选择 `danbooru_zh.csv` 等翻译文件时，其非空译名会覆盖内嵌译名；工作流中的词典控制器也可覆盖全局文件选择。
+`danbooru_ffdkj.csv` 与 `danbooru_merged_zh.csv` 均已内嵌译名，翻译文件可选「无」。额外选择 `danbooru_zh.csv` 等翻译文件时，其非空译名会覆盖内嵌译名；工作流中的词典控制器也可覆盖全局文件选择。
 
 <details>
 <summary>查看中文设置总览</summary>
 
-![Autocomplete+++ 中文设置中的补全开关、插入按键、权重步长、节点名单与显示选项](assets/images/zh-settings-overview.webp)
+![Tab 行为、Shift＋滚轮开关及独立权重步进设置](assets/images/zh-input-settings-v1.1.webp)
 
 [完整设置速查](README_zh.md#设置速查) · [CSV 格式与编码](docs/DICTIONARIES.md)
 
@@ -315,16 +342,20 @@ Anima 模式生效时，输入 `@` 可搜索画师；从普通标签搜索选择
 
 ### 工作流完成提示音
 
+![工作流完成提示音的试听、类型、音量与开关](assets/images/zh-workflow-sound-v1.1.webp)
+
 每个队列任务成功完成后提醒一次，包括全部使用缓存的任务；失败或手动中断不播放。支持清亮双音、柔和钟声、完成琶音和电子三连音，可调音量、独立开关并试听。
 
-在「设置 → Autocomplete+++ → 工作流提醒」中调整，默认开启、音量为 35%。声音由浏览器本地合成；打开或刷新页面后，先点击页面或按键允许播放，并保持页面打开且未静音。[使用说明](README_zh.md#工作流完成提示音)。
+在「设置 → Autocomplete+++ → 工作流提醒」中调整，默认开启、音量为 35%（截图使用本机自定义音量 100%）。声音由浏览器本地合成；打开或刷新页面后，先点击页面或按键允许播放，并保持页面打开且未静音。[使用说明](README_zh.md#工作流完成提示音)。
 
 ## 常用快捷键
 
 | 按键 | 操作 |
 | --- | --- |
 | `↑` / `↓` | 选择候选，可跨页 |
-| `Enter` / `Tab` | 插入选中候选，受按键设置控制 |
+| `Enter` / 点击 | 插入选中候选，Enter 可在设置中关闭 |
+| `Tab` | 切换排序，可在设置中改为插入或关闭 |
+| `Shift`＋滚轮 | 悬停候选时预览本次权重，确认后生效 |
 | `PageUp` / `PageDown` | 上一页 / 下一页 |
 | `F1` | 打开标签百科或 LoRA 详情 |
 | `Ctrl + Shift + Space` | 打开关联标签 |
@@ -347,7 +378,7 @@ Anima 模式生效时，输入 `@` 可搜索画师；从普通标签搜索选择
 <details>
 <summary>为什么翻译文件选「无」仍然显示中文？</summary>
 
-`danbooru_merged_zh.csv` 第五列已经包含译名。「无」表示不加载额外的覆盖翻译。可以分别关闭译名显示或中文搜索。
+ffdkj 和旧合并词库的第五列已经包含译名。「无」表示不加载额外的覆盖翻译。可以分别关闭译名显示或中文搜索。
 
 </details>
 
@@ -375,7 +406,7 @@ Anima 模式生效时，输入 `@` 可搜索画师；从普通标签搜索选择
 - [词库与关联索引](docs/DICTIONARIES.md)：CSV 格式、合并来源、翻译保留规则及索引构建。
 - [发布说明](docs/PUBLISHING.md)：上传 GitHub 时的数据文件和项目元数据处理。
 
-本项目 Danbooru 词库截止至 **2026.10.12**，使用当日的 tagdb-updater 来源快照，编码为 **UTF-8 无 BOM**。已有译名与别名原样保留，只有新增词条补充机器翻译；数据不自动更新，也未全部人工校订。
+内置合并词库截止至 **2026.10.12**，使用当日的 tagdb-updater 来源快照，编码为 **UTF-8 无 BOM**。已有译名与别名原样保留，只有新增词条补充机器翻译，未全部人工校订。这份旧快照保持固定；默认 ffdkj 词库有独立的上游版本，支持自动和手动更新。
 
 ## 项目来源与致谢
 
@@ -385,6 +416,8 @@ Anima 模式生效时，输入 `@` 可搜索画师；从普通标签搜索选择
 | --- | --- |
 | [michikora / Autocomplete++](https://github.com/michikora/ComfyUI-Autocomplete-Plus-Plus) | 本分支上游 |
 | [newtextdoc1111 / Autocomplete-Plus](https://github.com/newtextdoc1111/ComfyUI-Autocomplete-Plus) | 原始补全项目、已有词库及关联标签参考 |
+| [ffdkj / Danbooru 中英文对照表](https://github.com/ffdkj/ffdkj-Danbooru_Tag-Chinese-English-Translation-Table) | 可更新的中文标签词库（MIT） |
+| [Aaalice233 / ComfyUI-Autocomplete-Aaalice](https://github.com/Aaalice233/ComfyUI-Autocomplete-Aaalice) | ffdkj 词库独立下载、状态展示与更新流程参考 |
 | [PYU224 / tagdb-updater](https://github.com/PYU224/tagdb-updater) | 标签、分类、投稿数和日文名称 |
 | [boorutan / booru-japanese-tag](https://github.com/boorutan/booru-japanese-tag) | 上游数据使用的部分日文词库 |
 | [DominikDoom / tagcomplete](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete) | 上游功能的灵感与参考 |

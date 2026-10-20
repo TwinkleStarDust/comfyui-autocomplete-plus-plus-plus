@@ -1,3 +1,6 @@
+import { CandidateWeights, applyCandidateWeight } from "./candidate-weights.js";
+import { findPromptTag, promptTagAtCursor } from "./prompt-tags.js";
+import { insertTextWithUndo } from "./hotkeys.js";
 import { t } from "./i18n.js";
 import { app } from "/scripts/app.js";
 import { settingValues, id, isComfyThemeLight, logDebug } from "./settings.js";
@@ -9,6 +12,11 @@ import { getActiveControllerNode } from "./main.js";
 
 const SKIM_DEBOUNCE_MS = 200;
 const HOVER_DEBOUNCE_MS = 200;
+
+async function yieldSearchTask() {
+    if (globalThis.scheduler?.yield) await globalThis.scheduler.yield();
+    else await new Promise(resolve => setTimeout(resolve, 0));
+}
 
 // Category definitions
 const DANBOORU_CATEGORIES = {
@@ -80,7 +88,7 @@ export function getCanvasDictionariesOverrides() {
 export function getEffectiveDictionarySettings() {
     const overrides = getCanvasDictionariesOverrides();
     const effective = {
-        tagFile: settingValues.tagFile || "danbooru_merged_zh.csv",
+        tagFile: settingValues.tagFile || "danbooru_ffdkj.csv",
         extraFiles: settingValues.extraFiles || "",
         translationFile: settingValues.translationFile || "None"
     };
@@ -611,6 +619,11 @@ export function updateThumbBadgeStack(stack, { baseModel, civitaiUrl, hfUrl }) {
 
 export class TagCompleteEngine {
     constructor() {
+        this.searchGeneration = 0;
+        this.dictionaryVersion = 0;
+        this.candidateWeights = new CandidateWeights();
+        this.weightQuery = null;
+        this.isComposing = false;
         this.mainTags = [];
         this.extraTags = [];
         this.loadedDictionaries = [];
@@ -654,10 +667,7 @@ export class TagCompleteEngine {
         this.lockAnchorX = -1;
         this.lockAnchorY = -1;
 
-        // Key repeat suppression state
-        this.isKeyRepeating = false;
-        this.hasPendingInput = false;
-        this.searchPendingRaf = null;
+        this.searchTimer = null;
         this.pendingSearchTarget = null;
 
         // Floating thumbnail preview cards
@@ -707,7 +717,10 @@ export class TagCompleteEngine {
             // 1. Settings reconciliation (Auto-seed on first launch, reconcile on subsequent runs)
             const currentLocalSettings = {
                 "Enabled": settingValues.enabled,
-                "KeyAcceptTab": settingValues.keyAcceptTab,
+                "TabAction": settingValues.tabAction,
+                "EnableCandidateWeightWheel": settingValues.enableCandidateWeightWheel,
+                "CandidateWeightWheelStep": settingValues.candidateWeightWheelStep,
+                "RelatedTagsSortMode": settingValues.relatedTagsSortMode,
                 "KeyAcceptEnter": settingValues.keyAcceptEnter,
                 "IgnoredNodeTypes": settingValues.ignoredNodeTypes,
                 "OverrideNodeTypes": settingValues.overrideNodeTypes,
@@ -976,7 +989,7 @@ export class TagCompleteEngine {
 
         if (window.ResizeObserver) {
             const ro = new ResizeObserver(() => {
-                if (this.isVisible) this.updatePosition();
+                this.requestPositionUpdate();
             });
             ro.observe(this.domContainer);
         }
@@ -1005,9 +1018,7 @@ export class TagCompleteEngine {
             parent.appendChild(element);
             return element;
         };
-        this.sortButton = button("", t("Switch tag sort order"), () => {
-            app.ui.settings.setSettingValue(id + ".CandidateSortMode", settingValues.candidateSortMode === "Count" ? "Match" : "Count");
-        });
+        this.sortButton = button("", t("Switch tag sort order"), () => this.toggleSort());
         this.sortButton.className = "acCandidateSort";
         this.categoryFilters = document.createElement("div");
         this.categoryFilters.className = "acCandidateCategories";
@@ -1040,6 +1051,9 @@ export class TagCompleteEngine {
         this.domContainer.appendChild(toolbar);
         this.domRoot.appendChild(this.domList);
         this.domContainer.appendChild(this.domRoot);
+        this.keyboardHint = document.createElement("small");
+        this.keyboardHint.className = "acCandidateHint";
+        this.domContainer.appendChild(this.keyboardHint);
         document.body.appendChild(this.domContainer);
 
         // Global pointer delta & click tracker to release keyboard navigation lock upon intentional mouse motion (>= 4px from anchor) or clicks
@@ -1138,10 +1152,12 @@ export class TagCompleteEngine {
             if (this.isVisible) this.renderResults();
         });
         window.addEventListener("resize", () => {
-            if (this.isVisible) this.updatePosition();
+            this.requestPositionUpdate();
         });
-        window.addEventListener("tagcomplete-reload-tags", () => {
-            this.loadAllData();
+        window.addEventListener("tagcomplete-reload-tags", (event) => {
+            this.loadAllData(!!event.detail?.force).catch(error => {
+                console.warn("[Autocomplete+++] Failed to reload dictionaries:", error);
+            });
         });
 
         // Hide info popover when scrolling dropdown list or wheeling
@@ -1193,6 +1209,20 @@ export class TagCompleteEngine {
     }
 
     async loadAllData(force = false) {
+        if (this.dataLoadPromise) {
+            await this.dataLoadPromise;
+            return this.loadAllData(force);
+        }
+        if (force) csvCache.clear();
+        this.dataLoadPromise = this.loadDictionaryData(force);
+        try {
+            await this.dataLoadPromise;
+        } finally {
+            this.dataLoadPromise = null;
+        }
+    }
+
+    async loadDictionaryData(force = false) {
         const effDicts = getEffectiveDictionarySettings();
 
         if (!force &&
@@ -1208,6 +1238,8 @@ export class TagCompleteEngine {
         this.currentLoadedTranslationFile = effDicts.translationFile;
 
         // 0. Build dynamic index of all active loaded dictionaries
+        this.dictionaryVersion = (this.dictionaryVersion || 0) + 1;
+        this.candidateWeights?.clear();
         this.loadedDictionaries = buildLoadedDictionaryIndex(effDicts.tagFile, effDicts.extraFiles);
         this.translations.clear();
         this.reverseTranslations.clear();
@@ -1283,6 +1315,8 @@ export class TagCompleteEngine {
             this.reverseTranslations.get(transLower).push(tag);
         }
 
+        await this.prepareSearchData();
+
         // 4. Load Models & Wildcards
         try {
             const [loras, embeddings, wildcards] = await Promise.all([
@@ -1299,6 +1333,24 @@ export class TagCompleteEngine {
         }
 
         logDebug(`[Autocomplete+++] Loaded ${this.mainTags.length} main tags, ${this.extraTags.length} extra tags, ${this.translations.size} translations, ${this.loras.length} LoRAs, ${this.embeddings.length} Embeddings.`);
+    }
+
+    async prepareSearchData() {
+        const normalize = name => ({
+            name: name.toLowerCase().replace(/\\/g, ""),
+            translation: (this.translations.get(translationKey(name)) || "").toLowerCase().trim()
+        });
+        let deadline = performance.now() + 6;
+        for (const list of [this.mainTags, this.extraTags]) {
+            for (let i = 0; i < list.length; i++) {
+                const tag = list[i];
+                tag.search = { ...normalize(tag.name), nameLower: tag.name.toLowerCase(), aliases: tag.aliases.map(alias => ({ ...normalize(alias), original: alias })) };
+                if ((i & 255) === 0 && performance.now() >= deadline) {
+                    await yieldSearchTask();
+                    deadline = performance.now() + 6;
+                }
+            }
+        }
     }
 
     rebuildLoraDuplicatesSet() {
@@ -1549,9 +1601,11 @@ export class TagCompleteEngine {
         return hasUnetLoader && hasVaeLoader && hasClipLoader;
     }
 
-    async searchCandidates(query) {
+    async searchCandidates(query, isCurrent = () => true) {
         if (!query) return [];
         await this.loadAllData();
+        if (!isCurrent()) return [];
+        let deadline = performance.now() + 6;
 
         const qLower = query.toLowerCase();
         let candidates = [];
@@ -1601,10 +1655,16 @@ export class TagCompleteEngine {
                 const allArtistTags = [];
                 const seen = new Set();
 
-                const collectTags = (list) => {
+                const collectTags = async (list) => {
                     if (!Array.isArray(list)) return;
-                    for (const t of list) {
-                        const nameLower = (t.name || "").toLowerCase();
+                    for (let i = 0; i < list.length; i++) {
+                        if ((i & 511) === 0 && performance.now() >= deadline) {
+                            await yieldSearchTask();
+                            if (!isCurrent()) return;
+                            deadline = performance.now() + 6;
+                        }
+                        const t = list[i];
+                        const nameLower = t.search.nameLower;
                         if (t.category === 1) {
                             if (!seen.has(nameLower)) {
                                 seen.add(nameLower);
@@ -1626,8 +1686,9 @@ export class TagCompleteEngine {
                     }
                 };
 
-                collectTags(this.mainTags);
-                collectTags(this.extraTags);
+                await collectTags(this.mainTags);
+                await collectTags(this.extraTags);
+                if (!isCurrent()) return [];
 
                 // Sort literal @ items A-Z
                 literalAtHead.sort((a, b) => a.name.localeCompare(b.name));
@@ -1651,15 +1712,20 @@ export class TagCompleteEngine {
                 const seen = new Set();
                 const rawKeyword = rawSub.trim().toLowerCase();
 
-                const collectSubQuery = (list) => {
+                const collectSubQuery = async (list) => {
                     if (!Array.isArray(list)) return;
-                    for (const t of list) {
-                        const nameLower = (t.name || "").toLowerCase();
-                        const cleanTagNameLower = nameLower.replace(/\\/g, "");
+                    for (let i = 0; i < list.length; i++) {
+                        if ((i & 511) === 0 && performance.now() >= deadline) {
+                            await yieldSearchTask();
+                            if (!isCurrent()) return;
+                            deadline = performance.now() + 6;
+                        }
+                        const t = list[i];
+                        const nameLower = t.search.nameLower;
+                        const cleanTagNameLower = t.search.name;
                         if (seen.has(nameLower)) continue;
 
-                        const tagTrans = this.translations.get(translationKey(nameLower));
-                        const cleanTrans = (tagTrans && settingValues.searchTranslation) ? tagTrans.toLowerCase().trim() : null;
+                        const cleanTrans = settingValues.searchTranslation ? t.search.translation : null;
 
                         if (t.category === 1) {
                             let matched = false;
@@ -1672,10 +1738,11 @@ export class TagCompleteEngine {
 
                             // 2. Alias Prefix Match
                             if (!matched && t.aliases && t.aliases.length > 0) {
-                                for (const al of t.aliases) {
-                                    const alClean = al.toLowerCase().replace(/\\/g, "");
-                                    const alTrans = settingValues.searchTranslation ? this.translations.get(translationKey(al)) : null;
-                                    const alTransClean = alTrans ? alTrans.toLowerCase().trim() : null;
+                                for (const alias of t.search.aliases) {
+                                    const al = alias.original;
+                                    const alClean = alias.name;
+
+                                    const alTransClean = settingValues.searchTranslation ? alias.translation : null;
                                     if (alClean.startsWith(subClean) || (alTransClean && alTransClean.startsWith(rawKeyword))) {
                                         seen.add(nameLower);
                                         prefixArtists.push({ tag: t, alias: al });
@@ -1696,10 +1763,11 @@ export class TagCompleteEngine {
 
                             // 4. Alias Contains Match
                             if (!matched && t.aliases && t.aliases.length > 0) {
-                                for (const al of t.aliases) {
-                                    const alClean = al.toLowerCase().replace(/\\/g, "");
-                                    const alTrans = settingValues.searchTranslation ? this.translations.get(translationKey(al)) : null;
-                                    const alTransClean = alTrans ? alTrans.toLowerCase().trim() : null;
+                                for (const alias of t.search.aliases) {
+                                    const al = alias.original;
+                                    const alClean = alias.name;
+
+                                    const alTransClean = settingValues.searchTranslation ? alias.translation : null;
                                     if (alClean.includes(subClean) || (alTransClean && alTransClean.includes(rawKeyword))) {
                                         seen.add(nameLower);
                                         containsArtists.push({ tag: t, alias: al });
@@ -1720,8 +1788,9 @@ export class TagCompleteEngine {
                     }
                 };
 
-                collectSubQuery(this.mainTags);
-                collectSubQuery(this.extraTags);
+                await collectSubQuery(this.mainTags);
+                await collectSubQuery(this.extraTags);
+                if (!isCurrent()) return [];
 
                 // Sort artist groups by count descending, with A-Z fallback
                 prefixArtists.sort((a, b) => (b.tag.count || 0) !== (a.tag.count || 0) ? (b.tag.count || 0) - (a.tag.count || 0) : a.tag.name.localeCompare(b.tag.name));
@@ -2110,8 +2179,8 @@ export class TagCompleteEngine {
 
         const processTag = (tagItem, isMainDict = true) => {
             const tagName = tagItem.name;
-            const tagNameLower = tagName.toLowerCase();
-            const cleanTagNameLower = tagNameLower.replace(/\\/g, "");
+            const tagNameLower = tagItem.search.nameLower;
+            const cleanTagNameLower = tagItem.search.name;
             if (seen.has(tagNameLower)) return;
 
             // Apply dictionary filter if active
@@ -2155,8 +2224,19 @@ export class TagCompleteEngine {
             let matchedAlias = null;
             let score = 0;
 
-            const tagTrans = this.translations.get(translationKey(tagNameLower));
-            const cleanTrans = (tagTrans && settingValues.searchTranslation) ? tagTrans.toLowerCase().trim() : null;
+            const cleanTrans = settingValues.searchTranslation ? tagItem.search.translation : null;
+            if (!isFilterModeOnly) {
+                let matches = cleanTagNameLower.includes(normalizedQuery) || (cleanTrans && cleanTrans.includes(rawKeyword));
+                if (!matches) {
+                    for (const alias of tagItem.search.aliases) {
+                        if (alias.name.includes(normalizedQuery) || (settingValues.searchTranslation && alias.translation.includes(rawKeyword))) {
+                            matches = true;
+                            break;
+                        }
+                    }
+                }
+                if (!matches) return;
+            }
 
             const isSingleChar = normalizedQuery.length === 1 && normalizedQuery !== "/";
 
@@ -2179,10 +2259,11 @@ export class TagCompleteEngine {
 
                 // 3. Alias Exact Match (Tier 3 - Placed below Primary Head/Prefix matches, Translation unaffected)
                 if (!tier && tagItem.aliases && tagItem.aliases.length > 0) {
-                    for (const al of tagItem.aliases) {
-                        const alClean = al.toLowerCase().replace(/\\/g, "");
-                        const alTrans = (settingValues.searchTranslation) ? this.translations.get(translationKey(al)) : null;
-                        const alTransClean = alTrans ? alTrans.toLowerCase().trim() : null;
+                    for (const alias of tagItem.search.aliases) {
+                        const al = alias.original;
+                        const alClean = alias.name;
+
+                        const alTransClean = settingValues.searchTranslation ? alias.translation : null;
                         if (alClean === normalizedQuery || (alTransClean && alTransClean === rawKeyword)) {
                             tier = 3;
                             matchedAlias = al;
@@ -2203,10 +2284,11 @@ export class TagCompleteEngine {
 
                 // 5. Alias Prefix & Word Boundary Match (Tier 5 - Head/Prefix always active; Word boundary active for length >= 2)
                 if (!tier && tagItem.aliases && tagItem.aliases.length > 0) {
-                    for (const al of tagItem.aliases) {
-                        const alClean = al.toLowerCase().replace(/\\/g, "");
-                        const alTrans = (settingValues.searchTranslation) ? this.translations.get(translationKey(al)) : null;
-                        const alTransClean = alTrans ? alTrans.toLowerCase().trim() : null;
+                    for (const alias of tagItem.search.aliases) {
+                        const al = alias.original;
+                        const alClean = alias.name;
+
+                        const alTransClean = settingValues.searchTranslation ? alias.translation : null;
                         const isAliasPrefix = alClean.startsWith(normalizedQuery) || (alTransClean && alTransClean.startsWith(rawKeyword));
                         const isAliasWordBoundary = !isSingleChar && (
                             alClean.includes("_" + normalizedQuery) ||
@@ -2230,10 +2312,11 @@ export class TagCompleteEngine {
 
                 // 7. Alias Substring Fuzzy Match (Tier 7 - Contains, active for length >= 2)
                 if (!tier && !isSingleChar && tagItem.aliases && tagItem.aliases.length > 0) {
-                    for (const al of tagItem.aliases) {
-                        const alClean = al.toLowerCase().replace(/\\/g, "");
-                        const alTrans = (settingValues.searchTranslation) ? this.translations.get(translationKey(al)) : null;
-                        const alTransClean = alTrans ? alTrans.toLowerCase().trim() : null;
+                    for (const alias of tagItem.search.aliases) {
+                        const al = alias.original;
+                        const alClean = alias.name;
+
+                        const alTransClean = settingValues.searchTranslation ? alias.translation : null;
                         if (alClean.includes(normalizedQuery) || (alTransClean && alTransClean.includes(rawKeyword))) {
                             tier = 7;
                             matchedAlias = al;
@@ -2245,6 +2328,7 @@ export class TagCompleteEngine {
 
             if (tier > 0) {
                 seen.add(tagNameLower);
+                const tagTrans = this.translations.get(translationKey(tagNameLower));
                 const aliasTrans = matchedAlias ? this.translations.get(translationKey(matchedAlias)) : null;
 
                 let displayText = tagName;
@@ -2317,13 +2401,17 @@ export class TagCompleteEngine {
             }
         };
 
-        for (let i = 0; i < this.mainTags.length; i++) {
-            processTag(this.mainTags[i], true);
+        for (const [list, isMain] of [[this.mainTags, true], [this.extraTags, false]]) {
+            for (let i = 0; i < list.length; i++) {
+                processTag(list[i], isMain);
+                if ((i & 511) === 0 && performance.now() >= deadline) {
+                    await yieldSearchTask();
+                    if (!isCurrent()) return [];
+                    deadline = performance.now() + 6;
+                }
+            }
         }
-
-        for (let i = 0; i < this.extraTags.length; i++) {
-            processTag(this.extraTags[i], false);
-        }
+        if (!isCurrent()) return [];
 
         let finalCandidates = this.sortTagCandidates(candidates);
 
@@ -2531,6 +2619,11 @@ export class TagCompleteEngine {
         return finalCandidates;
     }
 
+    toggleSort() {
+        if (!this.allResults.some(item => item.matchTier !== undefined)) return;
+        app.ui.settings.setSettingValue(id + ".CandidateSortMode", settingValues.candidateSortMode === "Count" ? "Match" : "Count");
+    }
+
     sortTagCandidates(candidates) {
         const compare = settingValues.candidateSortMode === "Count"
             ? (a, b) => Number(b.matchTier === 1 || b.matchTier === 3) - Number(a.matchTier === 1 || a.matchTier === 3) || (b.count || 0) - (a.count || 0) || b.score - a.score
@@ -2616,6 +2709,11 @@ export class TagCompleteEngine {
         const mode = settingValues.candidateSortMode === "Count" ? t("Post count priority") : t("Match priority");
         this.sortButton.textContent = t("Sort: {mode}", { mode });
         this.sortButton.disabled = !this.allResults.some(item => item.matchTier !== undefined);
+        this.keyboardHint.textContent = [
+            settingValues.keyAcceptEnter ? t("Enter: insert") : "",
+            settingValues.tabAction === "Sort" ? t("Tab: switch sorting") : settingValues.tabAction === "Insert" ? t("Tab: insert") : "",
+            settingValues.enableCandidateWeightWheel ? t("Shift + wheel: preview weight") : ""
+        ].filter(Boolean).join(" · ");
         const hasE621 = this.loadedDictionaries.some(dictionary => dictionary.isE621);
         for (const [category, element] of this.categoryButtons) {
             const count = category === "all" ? this.allResults.length : (this.candidateCategoryCounts.get(category) || 0);
@@ -2644,6 +2742,8 @@ export class TagCompleteEngine {
             return;
         }
 
+        const editing = promptTagAtCursor(this.target.value, this.target.selectionStart);
+        const exclude = editing || { start: this.tagwordStart, end: this.tagwordEnd };
         visibleResults.forEach((item, offset) => {
             const index = pageStart + offset;
             const li = document.createElement("li");
@@ -2661,6 +2761,10 @@ export class TagCompleteEngine {
 
             const isSpecialType = item.type === "lora" || item.type === "lora_prefix" || item.type === "lora_dir" || item.type === "embeddings" || item.type === "embedding_prefix" || item.type === "wildcard" || item.type === "wildcard_dir" || item.type === "wildcard_file_step" || item.type === "wildcard_syntax_complete" || item.type === "wildcard_item" || item.type === "category_prefix" || item.type === "dict_prefix" || item.type === "trigger_word" || item.type === "trigger_prefix";
             if (!isSpecialType) li.classList.add("acTagRow");
+            if ((!isSpecialType || item.type === "trigger_word") && findPromptTag(this.target.value, item.text, exclude)) {
+                li.classList.add("acCandidateExisting");
+                li.title += " · " + t("Already in prompt");
+            }
 
             let catClass = "ac-cat-general";
             if (item.type === "trigger_word" || item.type === "trigger_prefix" || item.category === "trigger") catClass = "ac-cat-trigger";
@@ -2874,9 +2978,15 @@ export class TagCompleteEngine {
             });
 
             // Handle item selection on click
-            const handleItemSelect = (e) => {
+            const handleItemSelect = async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                if (this.searchTimer != null || this.activeSearchPromise) {
+                    await this.flushPendingSearch();
+                    const current = this.results.find(result => result.text === item.text && result.type === item.type);
+                    if (this.isVisible && current) this.insertTag(current);
+                    return;
+                }
                 this.unlockMouseHover();
                 this.selectedIndex = index;
                 this.insertTag(item);
@@ -2889,6 +2999,8 @@ export class TagCompleteEngine {
                 e.stopPropagation();
             });
 
+            const initialWeight = item.type === "lora" ? Number(item.text.match(/:([+-]?[\d.]+)>$/)?.[1] ?? 1) : (editing?.weight ?? 1);
+            this.candidateWeights.bind(li, item, initialWeight);
             this.domList.appendChild(li);
         });
 
@@ -4224,6 +4336,14 @@ export class TagCompleteEngine {
         this.activePopoverSources = null;
     }
 
+    requestPositionUpdate() {
+        if (!this.isVisible || this.positionFrame != null) return;
+        this.positionFrame = requestAnimationFrame(() => {
+            this.positionFrame = null;
+            if (this.isVisible) this.updatePosition();
+        });
+    }
+
     updatePosition() {
         if (!this.target) return;
         const coords = getFixedCaretCoordinates(this.target, this.target.selectionStart);
@@ -4281,17 +4401,18 @@ export class TagCompleteEngine {
     }
 
     cancelPendingSearch() {
-        if (this.searchPendingRaf !== null) {
-            cancelAnimationFrame(this.searchPendingRaf);
-            this.searchPendingRaf = null;
+        this.searchGeneration = (this.searchGeneration || 0) + 1;
+        if (this.searchTimer != null) {
+            clearTimeout(this.searchTimer);
+            this.searchTimer = null;
         }
         this.pendingSearchTarget = null;
     }
 
     async flushPendingSearch() {
-        if (this.searchPendingRaf === null) return;
-        cancelAnimationFrame(this.searchPendingRaf);
-        this.searchPendingRaf = null;
+        if (this.searchTimer == null) return this.activeSearchPromise;
+        clearTimeout(this.searchTimer);
+        this.searchTimer = null;
         const target = this.pendingSearchTarget;
         this.pendingSearchTarget = null;
         if (target) {
@@ -4301,6 +4422,12 @@ export class TagCompleteEngine {
 
     hide() {
         this.cancelPendingSearch();
+        if (this.positionFrame != null) {
+            cancelAnimationFrame(this.positionFrame);
+            this.positionFrame = null;
+        }
+        this.candidateWeights.clear();
+        this.weightQuery = null;
         this.isVisible = false;
         this.isInsideLoraPrefixSession = false;
         this.unlockMouseHover();
@@ -4424,7 +4551,13 @@ export class TagCompleteEngine {
             }
         }
 
+        const weight = settingValues.enableCandidateWeightWheel ? this.candidateWeights.get(item) : undefined;
         const fullVal = this.target.value;
+        const editing = promptTagAtCursor(fullVal, this.target.selectionStart);
+        if (weight !== undefined && editing && editing.contentStart > editing.start) {
+            this.tagwordStart = editing.start;
+            this.tagwordEnd = editing.end;
+        }
         const before = fullVal.substring(0, this.tagwordStart);
         const originalAfter = fullVal.substring(this.tagwordEnd);
         let after = originalAfter;
@@ -4519,13 +4652,12 @@ export class TagCompleteEngine {
             }
         }
 
+        if (weight !== undefined) insertText = applyCandidateWeight(insertText, weight, item.type);
         const tagWordOnly = insertText;
 
         if (autoComma && !insertText.endsWith(",")) {
             insertText += ", ";
         }
-
-        this.target.value = before + insertText + after;
 
         // Check if there was any content after the cursor on the same line
         const isEndOfLineOrPrompt = /^[ \t]*(\r?\n|$)/.test(originalAfter);
@@ -4539,13 +4671,13 @@ export class TagCompleteEngine {
             newCursorPos = before.length + tagWordOnly.length;
         }
 
-        this.target.selectionStart = newCursorPos;
-        this.target.selectionEnd = newCursorPos;
-
+        this.target.setSelectionRange(before.length, fullVal.length);
         this.isInserting = true;
-        this.target.dispatchEvent(new Event("input", { bubbles: true }));
-        this.target.dispatchEvent(new Event("change", { bubbles: true }));
-        this.isInserting = false;
+        try {
+            insertTextWithUndo(this.target, insertText + after, newCursorPos, newCursorPos);
+        } finally {
+            this.isInserting = false;
+        }
 
         // Record usage frequency only for tags, artists, LoRAs, and embeddings
         if (!item.type || item.type === "artist" || item.type === "lora" || item.type === "embeddings") {
@@ -4578,90 +4710,99 @@ export class TagCompleteEngine {
     }
 
     async triggerSearch(target) {
+        const pending = this.runSearch(target);
+        this.activeSearchPromise = pending;
+        try { await pending; }
+        finally { if (this.activeSearchPromise === pending) this.activeSearchPromise = null; }
+    }
+
+    async runSearch(target) {
         this.cancelPendingSearch();
-        if (!settingValues.enabled || this.isInserting) return;
+        if (!settingValues.enabled || this.isInserting || this.isComposing) return;
         this.target = target || this.target;
         if (!this.target) return;
-
-        const tagword = this.extractTagword(this.target);
-        if (!tagword || tagword.length < 1) {
-            this.hide();
-            return;
+        target = this.target;
+        const value = target.value;
+        const cursor = target.selectionStart;
+        const end = target.selectionEnd;
+        const generation = this.searchGeneration;
+        const valid = () => generation === this.searchGeneration && this.target === target &&
+            target.value === value && target.selectionStart === cursor && target.selectionEnd === end && !this.isComposing && settingValues.enabled;
+        const tagword = this.extractTagword(target);
+        if (!tagword) { this.hide(); return; }
+        if (this.weightQuery !== tagword || this.weightTarget !== target || this.weightStart !== this.tagwordStart) {
+            this.candidateWeights.clear();
+            this.weightQuery = tagword;
+            this.weightTarget = target;
+            this.weightStart = this.tagwordStart;
         }
-
-        const results = await this.searchCandidates(tagword);
-        if (!this.target) return;
+        await this.loadAllData();
+        if (!valid()) return;
+        const version = this.dictionaryVersion;
+        const current = () => valid() && version === this.dictionaryVersion;
+        const results = await this.searchCandidates(tagword, current);
+        if (!current()) return;
+        await yieldSearchTask();
+        if (!current()) return;
         this.setResults(results);
         this.renderResults();
     }
 
+    handleCompositionStart() {
+        this.isComposing = true;
+        this.hide();
+    }
+
+    handleCompositionEnd(event) {
+        this.isComposing = false;
+        this.handleInput(event);
+    }
+
     handleInput(event) {
         if (!settingValues.enabled || this.isInserting) return;
-        if (this.suppressNextSearch) {
-            this.suppressNextSearch = false;
-            return;
-        }
-        this.target = event.target;
-
-        // Suspend candidate searches during key repeat
-        if (this.isKeyRepeating) {
-            this.cancelPendingSearch();
-            this.hasPendingInput = true;
-            const tagword = this.extractTagword(this.target);
-            if (!tagword || tagword.length < 1) {
-                this.hide();
-            }
-            return;
-        }
-
-        // Immediate dismiss when tagword is empty (e.g. spaces, commas, backspaced to empty)
-        const tagword = this.extractTagword(this.target);
-        if (!tagword || tagword.length < 1) {
-            this.cancelPendingSearch();
-            this.hide();
-            return;
-        }
-
-        // Decouple search & rendering to the next animation frame for low latency keystroke display
-        this.hasPendingInput = false;
         this.cancelPendingSearch();
+        if (this.suppressNextSearch) { this.suppressNextSearch = false; return; }
+        this.target = event.target;
+        if (this.isComposing || event.isComposing) return;
+        const tagword = this.extractTagword(this.target);
+        if (!tagword) { this.hide(); return; }
         this.pendingSearchTarget = this.target;
-        this.searchPendingRaf = requestAnimationFrame(async () => {
-            this.searchPendingRaf = null;
+        // A task, rather than a pre-paint rAF callback, leaves input painting unblocked.
+        this.searchTimer = setTimeout(() => {
+            this.searchTimer = null;
             const target = this.pendingSearchTarget;
             this.pendingSearchTarget = null;
-            if (target) {
-                await this.triggerSearch(target);
-            }
-        });
+            if (target) this.triggerSearch(target);
+        }, 0);
     }
 
     async handleKeyDown(event) {
-        // Track key repeat state for text mutation keys
-        if (event.repeat) {
-            this.isKeyRepeating = true;
+        if (this.isComposing || event.isComposing || event.keyCode === 229) return;
+        if (event.key === "Tab" && (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey)) return;
+        const pending = this.searchTimer != null || this.activeSearchPromise;
+        const open = this.isVisible || pending;
+        if (event.key === "Tab" && settingValues.tabAction === "Sort" && open) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (pending) await this.flushPendingSearch();
+            if (this.isVisible) this.toggleSort();
+            return;
         }
-
-        const isAcceptKey = (
-            (event.key === "Tab" && settingValues.keyAcceptTab) ||
+        const isAcceptKey = !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey && (
+            (event.key === "Tab" && settingValues.tabAction === "Insert") ||
             (event.key === "Enter" && settingValues.keyAcceptEnter)
         );
-
-        if (isAcceptKey && (this.isVisible || this.searchPendingRaf)) {
+        if (isAcceptKey && open) {
             event.preventDefault();
-            event.stopPropagation();
-            if (this.searchPendingRaf) {
-                await this.flushPendingSearch();
-            }
-            if (this.results[this.selectedIndex]) {
-                this.insertTag(this.results[this.selectedIndex]);
-            }
+            event.stopImmediatePropagation();
+            if (pending) await this.flushPendingSearch();
+            if (this.isVisible && this.results[this.selectedIndex]) this.insertTag(this.results[this.selectedIndex]);
             return;
         }
 
         const isNavKey = event.key === "ArrowDown" || event.key === "ArrowUp" ||
                          event.key === "PageDown" || event.key === "PageUp";
-        if (isNavKey && this.searchPendingRaf) {
+        if (isNavKey && (this.searchTimer != null || this.activeSearchPromise)) {
             await this.flushPendingSearch();
         }
 
@@ -4727,15 +4868,6 @@ export class TagCompleteEngine {
         } else if (event.key === "PageUp") {
             event.preventDefault();
             this.changePage(-1);
-        } else if (
-            (event.key === "Tab" && settingValues.keyAcceptTab) ||
-            (event.key === "Enter" && settingValues.keyAcceptEnter)
-        ) {
-            event.preventDefault();
-            event.stopPropagation();
-            if (this.results[this.selectedIndex]) {
-                this.insertTag(this.results[this.selectedIndex]);
-            }
         } else if (event.key === "Escape") {
             event.preventDefault();
             this.cancelPendingSearch();
@@ -4778,15 +4910,6 @@ export class TagCompleteEngine {
                     }
                 }
             }
-        }
-    }
-
-    async handleKeyUp(event) {
-        this.isKeyRepeating = false;
-        // If an input was suspended during long-press repeating, resolve final state immediately
-        if (this.hasPendingInput && this.target) {
-            this.hasPendingInput = false;
-            await this.triggerSearch(this.target);
         }
     }
 

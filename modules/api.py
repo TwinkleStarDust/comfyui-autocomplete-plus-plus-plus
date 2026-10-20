@@ -10,10 +10,39 @@ import server
 from aiohttp import web
 from . import logger
 from .related_tags import query_related_tags
+from .dictionary_updater import DictionaryUpdater
 
 TAGS_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "tags"))
 TRANSLATIONS_DIR = os.path.normpath(os.path.join(TAGS_DIR, "translations"))
 DATA_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "data"))
+dictionary_updater = DictionaryUpdater(TAGS_DIR, DATA_DIR)
+
+
+@server.PromptServer.instance.routes.get("/autocomplete-plus-plus/dictionary/status")
+async def get_dictionary_status(_request):
+    return web.json_response(dictionary_updater.status())
+
+
+@server.PromptServer.instance.routes.post("/autocomplete-plus-plus/dictionary/{action}")
+async def update_dictionary(request):
+    action = request.match_info["action"]
+    if action == "ensure":
+        result = dictionary_updater.ensure()
+    elif action == "check":
+        result = dictionary_updater.start_update(check_only=True)
+    elif action in {"update", "repair"}:
+        result = dictionary_updater.start_update(force=action == "repair")
+    elif action == "configure":
+        try:
+            payload = await request.json()
+        except ValueError:
+            return web.json_response({"error": "Invalid JSON"}, status=400)
+        if not isinstance(payload, dict) or not isinstance(payload.get("auto_update"), bool):
+            return web.json_response({"error": "auto_update must be a boolean"}, status=400)
+        result = dictionary_updater.configure(payload["auto_update"])
+    else:
+        return web.json_response({"error": "Unknown dictionary action"}, status=404)
+    return web.json_response(result)
 
 
 @server.PromptServer.instance.routes.get("/autocomplete-plus-plus/related-tags")

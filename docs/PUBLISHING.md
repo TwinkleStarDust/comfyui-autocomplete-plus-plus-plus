@@ -22,6 +22,9 @@ comfyui-autocomplete-plus-plus-plus/
 ├── scripts/build_related_index.py
 ├── tags/
 │   ├── danbooru.csv
+│   ├── danbooru_ffdkj.csv
+│   ├── danbooru_ffdkj.snapshot.json
+│   ├── FFDKJ-LICENSE.txt
 │   ├── danbooru_merged_zh.csv
 │   └── translations/danbooru_zh.csv
 └── data/
@@ -36,9 +39,17 @@ comfyui-autocomplete-plus-plus-plus/
 git add -f tags/translations/your_dictionary.csv
 ```
 
-五列主词库已包含译名，也可通过「标签翻译文件：无」直接使用内嵌译名。
+五列主词库已包含译名，也可通过「标签翻译文件：无」直接使用内嵌译名。v1.1.0 随包提供默认 ffdkj 词库、版本清单及原 MIT 许可；`data/ffdkj/` 只存放个人更新状态和下载缓存，应排除。
 
 关联索引需要单独随仓库或下载包提供，或者由使用者按[索引说明](DICTIONARIES.md#关联索引构建)构建。若发布包不包含该文件，请在下载说明中注明。`data/user_data.json` 保存个人设置与标签使用历史，已被忽略，不应作为公共词库发布。
+
+## v1.1.0 安装包
+
+命名附件为 `comfyui-autocomplete-plus-plus-plus-v1.1.0.zip`，根目录为插件目录，包含源码、文档、截图、默认 ffdkj 词库、旧合并词库和本地关联索引。附 `SHA256SUMS.txt` 用于校验。
+
+升级保留用户已保存的设置；改用 ffdkj 时可在更新面板点击「使用此词库」。更新后重启 ComfyUI 后端并按 `Ctrl + F5`。`Tab` 默认行为改为切换排序，需要旧操作时可设为「插入候选」。
+
+本次版本发布到 GitHub Releases。Registry 仍为独立发布渠道，查看其实际版本后再选择安装方式。
 
 ## 项目与 Registry 元数据
 

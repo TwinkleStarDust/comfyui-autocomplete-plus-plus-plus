@@ -1,4 +1,25 @@
 {
+  "ComfyUI_AutocompletePlusPlus_TabAction": {
+    "name": "Tab 键行为",
+    "tooltip": "候选窗口打开时，Tab 默认切换排序；Shift+Tab 保留正常焦点切换。"
+  },
+  "ComfyUI_AutocompletePlusPlus_KeyAcceptEnter": {
+    "name": "Enter 键插入候选项"
+  },
+  "ComfyUI_AutocompletePlusPlus_EnableCandidateWeightWheel": {
+    "name": "Shift＋滚轮调整候选权重",
+    "tooltip": "悬停词条并按住 Shift 滚动鼠标，预览权重，确认后插入；关联窗口中的已有词条会更新权重。"
+  },
+  "ComfyUI_AutocompletePlusPlus_CandidateWeightWheelStep": {
+    "name": "候选权重滚轮步进",
+    "tooltip": "每次滚轮操作的权重变化量，与 Ctrl＋上/下方向键的步进独立。"
+  },
+  "ComfyUI_AutocompletePlusPlus_RelatedTagsSortMode": {
+    "name": "关联标签排序"
+  },
+  "ComfyUI_AutocompletePlusPlus_FfdkjDictionary": {
+    "name": "ffdkj 中文词库"
+  },
   "ComfyUI_AutocompletePlusPlus_WorkflowCompletionSound": {
     "name": "工作流完成提示音",
     "tooltip": "每个队列任务成功完成后提示一次，包括使用缓存的任务。报错和中断时不响。独立于自动补全开关。"
@@ -35,7 +56,11 @@
   "ComfyUI_AutocompletePlusPlus_PopupLayout": {
     "name": "普通补全翻译布局",
     "tooltip": "选择英文标签与翻译的排列方式：行内显示、左右分栏或上下排列。用于普通补全窗口。",
-    "options": { "Inline": "行内显示", "Columns": "左右分栏", "Stacked": "上下排列" }
+    "options": {
+      "Inline": "行内显示",
+      "Columns": "左右分栏",
+      "Stacked": "上下排列"
+    }
   },
   "ComfyUI_AutocompletePlusPlus_EnableRelatedTags": {
     "name": "启用关联标签",
@@ -44,16 +69,23 @@
   "ComfyUI_AutocompletePlusPlus_RelatedTagsTrigger": {
     "name": "关联标签触发方式",
     "tooltip": "选择打开关联标签面板的方式。所有模式均支持 Ctrl+Shift+空格。",
-    "options": { "Click": "点击标签", "Ctrl + Click": "Ctrl + 点击", "Shortcut only": "仅快捷键" }
+    "options": {
+      "Click": "点击标签",
+      "Ctrl + Click": "Ctrl + 点击",
+      "Shortcut only": "仅快捷键"
+    }
   },
   "ComfyUI_AutocompletePlusPlus_MaxRelatedTags": {
     "name": "最多显示的关联标签数",
-    "tooltip": "按 Jaccard 相似度排序，限制面板中显示的关联标签数量。"
+    "tooltip": "排序后显示的关联标签数量，可按关联度或投稿数排序。"
   },
   "ComfyUI_AutocompletePlusPlus_RelatedTagsLayout": {
     "name": "关联标签默认布局",
     "tooltip": "设置面板的默认布局。面板顶部按钮可临时切换布局。",
-    "options": { "Horizontal": "横向排列", "Vertical": "纵向列表" }
+    "options": {
+      "Horizontal": "横向排列",
+      "Vertical": "纵向列表"
+    }
   },
   "ComfyUI_AutocompletePlusPlus_EnableConsoleDebugLogs": {
     "name": "启用控制台调试日志",
@@ -74,10 +106,6 @@
   "ComfyUI_AutocompletePlusPlus_TagWeightStep": {
     "name": "标签 / Embedding 权重调整步长",
     "tooltip": "在普通标签或 Embedding（如 (tag:1.1)）中按 Ctrl+↑/↓ 时，每次调整的权重数值。"
-  },
-  "ComfyUI_AutocompletePlusPlus_KeyAccept": {
-    "name": "插入补全候选的按键",
-    "tooltip": "选择用于插入当前候选项的按键：Tab、Enter，或同时启用两者。"
   },
   "ComfyUI_AutocompletePlusPlus_Enabled": {
     "name": "启用自动补全",

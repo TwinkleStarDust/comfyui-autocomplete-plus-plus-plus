@@ -10,6 +10,7 @@ __pycache__/
 # User persistent data
 data/user_data.json
 data/*.tmp
+data/ffdkj/
 !data/.gitkeep
 
 # wildcards & translation csv

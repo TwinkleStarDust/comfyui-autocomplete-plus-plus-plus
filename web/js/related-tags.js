@@ -1,70 +1,27 @@
+import { app } from "/scripts/app.js";
+import { CandidateWeights, applyCandidateWeight } from "./candidate-weights.js";
+import { getPromptTagIndex, normalizePromptTag, findPromptTag, promptTagAtCursor } from "./prompt-tags.js";
 // Related Tags Display, ported from newtextdoc1111/ComfyUI-Autocomplete-Plus (MIT).
-import { settingValues, isComfyThemeLight } from "./settings.js";
+import { id, settingValues, isComfyThemeLight } from "./settings.js";
 import { t } from "./i18n.js";
 import { insertTextWithUndo } from "./hotkeys.js";
 import { getFixedCaretCoordinates } from "./caret-position.js";
 import { getEffectiveFormattingSettings, isKeepUnderscoresTextarea, buildUnderscoreExclusionSet, formatTagUnderscores } from "./auto-formatter.js";
 
 export function normalizeRelatedTag(raw) {
-    let tag = String(raw || "").trim();
-    if (tag.startsWith("__") || /^(?:embedding:|emb:|\/|<)/i.test(tag)) return "";
-    tag = tag.replace(/^@/, "");
-    // Remove prompt emphasis/weights, preserving escaped parentheses in tag names.
-    while (tag.startsWith("(") && tag.endsWith(")")) {
-        let depth = 0;
-        let encloses = true;
-        for (let i = 0; i < tag.length; i++) {
-            if (tag[i] === "\\") { i++; continue; }
-            if (tag[i] === "(") depth++;
-            if (tag[i] === ")") depth--;
-            if (depth === 0 && i < tag.length - 1) { encloses = false; break; }
-        }
-        if (!encloses || depth !== 0) break;
-        tag = tag.slice(1, -1).replace(/\s*:\s*[+-]?(?:\d+\.?\d*|\.\d+)\s*$/, "").trim();
-    }
-    if (/(^|[^\\])[{}\[\]|<>]/.test(tag)) return "";
-    return tag.replace(/\\([()[\]{},|\\])/g, "$1").toLowerCase().replace(/[ \t]+/g, "_");
-}
-
-function promptTagSpans(text) {
-    const spans = [];
-    let start = 0;
-    let startsInsideGroup = false;
-    const groups = [];
-    const closing = { ")": "(", "]": "[", "}": "{" };
-    for (let i = 0; i <= text.length; i++) {
-        if (text[i] === "\\") { i++; continue; }
-        if (i === text.length || /[,\n\r]/.test(text[i])) {
-            const raw = text.slice(start, i);
-            const leading = raw.length - raw.trimStart().length;
-            const end = i - (raw.length - raw.trimEnd().length);
-            if (!startsInsideGroup && start + leading < end) {
-                spans.push({ start: start + leading, end, text: text.slice(start + leading, end), from: start, to: i });
-            }
-            start = i + 1;
-            startsInsideGroup = groups.length > 0;
-        } else if ("([{".includes(text[i])) {
-            groups.push(text[i]);
-        } else if (closing[text[i]] && closing[text[i]] === groups[groups.length - 1]) {
-            groups.pop();
-        }
-    }
-    return spans;
+    const spans = getPromptTagIndex(String(raw || "")).spans;
+    return spans.length === 1 ? spans[0].name : "";
 }
 
 export function getRelatedTagAtCursor(text, cursor) {
-    const span = promptTagSpans(text).find(item => cursor >= item.from && cursor <= item.to);
-    if (!span) return null;
-    const name = normalizeRelatedTag(span.text);
-    return name ? { ...span, name } : null;
+    return promptTagAtCursor(text, cursor);
 }
 
 export function findRelatedTagInPrompt(text, name) {
-    const key = normalizeRelatedTag(name);
-    return promptTagSpans(text).find(span => normalizeRelatedTag(span.text) === key) || null;
+    return findPromptTag(text, name);
 }
 
-export function rankRelatedTags(source, neighbors, tagIndex, limit) {
+export function rankRelatedTags(source, neighbors, tagIndex, limit, mode = "Similarity") {
     const countA = Number(source.count) || 0;
     return neighbors.flatMap(neighbor => {
         const tag = tagIndex.get(neighbor.name);
@@ -74,7 +31,7 @@ export function rankRelatedTags(source, neighbors, tagIndex, limit) {
         const union = countA + countB - shared;
         const similarity = countA > 0 && countB > 0 && union > 0 ? shared / union : 0;
         return [{ ...tag, cooccurrence: shared, similarity }];
-    }).sort((a, b) => b.similarity - a.similarity || b.cooccurrence - a.cooccurrence).slice(0, limit);
+    }).sort((a, b) => (mode === "Count" ? b.count - a.count : 0) || b.similarity - a.similarity || b.cooccurrence - a.cooccurrence).slice(0, limit);
 }
 
 export function buildRelatedInsertion(text, source, tag, formatting) {
@@ -95,6 +52,8 @@ export class RelatedTagsController {
         this.cache = new Map();
         this.tagIndex = new Map();
         this.results = [];
+        this.candidateWeights = new CandidateWeights();
+        this.neighbors = [];
         this.visible = false;
         this.pinned = false;
         this.inserting = false;
@@ -110,7 +69,17 @@ export class RelatedTagsController {
             if (this.visible && !this.panel.contains(event.target) && event.target !== this.target) this.hide();
         }, true);
         window.addEventListener("resize", () => this.updatePosition());
-        window.addEventListener("wheel", () => requestAnimationFrame(() => this.updatePosition()), { passive: true });
+        window.addEventListener("wheel", () => {
+            if (!this.visible || this.positionFrame) return;
+            this.positionFrame = requestAnimationFrame(() => { this.positionFrame = null; this.updatePosition(); });
+        }, { passive: true });
+        window.addEventListener("autocomplete-related-sort-changed", () => {
+            if (!this.visible || !this.sourceData) return;
+            this.results = rankRelatedTags(this.sourceData, this.neighbors, this.tagIndex, settingValues.maxRelatedTags, settingValues.relatedTagsSortMode);
+            this.selectedIndex = 0;
+            this.render();
+        });
+        window.addEventListener("autocomplete-popup-settings-changed", () => { if (this.visible) this.render(); });
         window.addEventListener("autocomplete-related-settings-changed", () => this.hide());
     }
 
@@ -118,17 +87,36 @@ export class RelatedTagsController {
         return settingValues.enabled && settingValues.enableRelatedTags && target && !target.readOnly && !target.disabled && !isKeepUnderscoresTextarea(target);
     }
 
-    rebuildTagIndex() {
+    async rebuildTagIndex() {
+        if (this.tagIndexPromise) await this.tagIndexPromise;
         if (this.mainTags === this.engine.mainTags && this.extraTags === this.engine.extraTags) return;
-        this.mainTags = this.engine.mainTags;
-        this.extraTags = this.engine.extraTags;
-        this.tagIndex.clear();
-        for (const tag of [...this.mainTags, ...this.extraTags]) {
-            // A Danbooru count is needed for Jaccard; do not mix in e621 counts.
-            if (!tag.sourceFile?.includes("danbooru")) continue;
-            const key = normalizeRelatedTag(tag.name);
-            if (key && !this.tagIndex.has(key)) this.tagIndex.set(key, tag);
-        }
+        const mainTags = this.engine.mainTags;
+        const extraTags = this.engine.extraTags;
+        this.tagIndexPromise = (async () => {
+            const index = new Map();
+            let deadline = performance.now() + 6;
+            for (const list of [mainTags, extraTags]) {
+                for (let i = 0; i < list.length; i++) {
+                    const tag = list[i];
+                    // Jaccard needs Danbooru counts, rather than e621 counts.
+                    if (tag.sourceFile?.includes("danbooru")) {
+                        const key = normalizePromptTag(tag.name);
+                        if (key && !index.has(key)) index.set(key, tag);
+                    }
+                    if ((i & 511) === 0 && performance.now() >= deadline) {
+                        if (globalThis.scheduler?.yield) await globalThis.scheduler.yield();
+                        else await new Promise(resolve => setTimeout(resolve, 0));
+                        deadline = performance.now() + 6;
+                    }
+                }
+            }
+            this.mainTags = mainTags;
+            this.extraTags = extraTags;
+            this.tagIndex = index;
+        })();
+        try { await this.tagIndexPromise; }
+        finally { this.tagIndexPromise = null; }
+        if (mainTags !== this.engine.mainTags || extraTags !== this.engine.extraTags) await this.rebuildTagIndex();
     }
 
     async lookup(name) {
@@ -150,16 +138,20 @@ export class RelatedTagsController {
         if (!this.isEnabled(target)) { this.hide(); return; }
         const source = getRelatedTagAtCursor(target.value, target.selectionStart);
         if (!source) { this.hide(); return; }
+        this.candidateWeights.clear();
         const requestId = ++this.requestId;
         const originalValue = target.value;
         const originalCursor = target.selectionStart;
         await this.engine.loadAllData();
         if (requestId !== this.requestId || target.value !== originalValue || target.selectionStart !== originalCursor) return;
-        this.rebuildTagIndex();
+        await this.rebuildTagIndex();
+        if (requestId !== this.requestId || target.value !== originalValue || target.selectionStart !== originalCursor) return;
         const sourceData = this.tagIndex.get(source.name);
         if (!sourceData) { this.hide(); return; }
         this.target = target;
         this.source = source;
+        this.sourceData = sourceData;
+        this.neighbors = [];
         this.selectedIndex = 0;
         this.layout = settingValues.relatedTagsLayout;
         this.results = [];
@@ -173,7 +165,8 @@ export class RelatedTagsController {
                 if (requestId === this.requestId) this.hide();
                 return;
             }
-            this.results = rankRelatedTags(sourceData, neighbors, this.tagIndex, settingValues.maxRelatedTags);
+            this.neighbors = neighbors;
+            this.results = rankRelatedTags(sourceData, neighbors, this.tagIndex, settingValues.maxRelatedTags, settingValues.relatedTagsSortMode);
             this.render(this.results.length ? "" : t("No related tags in the active Danbooru dictionary."));
         } catch (error) {
             if (requestId === this.requestId) this.render(t(error instanceof TypeError ? "Unable to load related tags. Try again." : error.message));
@@ -187,6 +180,7 @@ export class RelatedTagsController {
     }
 
     handleKeyDown(event) {
+        if (event.isComposing || event.keyCode === 229 || this.engine.isComposing) return false;
         if (!this.isEnabled(event.target)) { this.hide(); return false; }
         const shortcut = event.ctrlKey && event.shiftKey && (event.code === "Space" || event.key === " ");
         if (shortcut) {
@@ -200,7 +194,14 @@ export class RelatedTagsController {
         let direction = 0;
         if (plain && (event.key === "ArrowDown" || (this.layout === "Horizontal" && event.key === "ArrowRight"))) direction = 1;
         if (plain && (event.key === "ArrowUp" || (this.layout === "Horizontal" && event.key === "ArrowLeft"))) direction = -1;
-        const accepts = plain && ((event.key === "Enter" && settingValues.keyAcceptEnter) || (event.key === "Tab" && settingValues.keyAcceptTab));
+        if (event.key === "Tab" && !plain) return false;
+        if (plain && event.key === "Tab" && settingValues.tabAction === "Sort") {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            this.toggleSort();
+            return true;
+        }
+        const accepts = plain && ((event.key === "Enter" && settingValues.keyAcceptEnter) || (event.key === "Tab" && settingValues.tabAction === "Insert"));
         if (direction || accepts || event.key === "Escape") {
             event.preventDefault();
             event.stopImmediatePropagation();
@@ -215,6 +216,10 @@ export class RelatedTagsController {
         return false;
     }
 
+    toggleSort() {
+        app.ui.settings.setSettingValue(id + ".RelatedTagsSortMode", settingValues.relatedTagsSortMode === "Count" ? "Similarity" : "Count");
+    }
+
     handleInput() {
         if (!this.inserting) this.hide();
     }
@@ -226,6 +231,7 @@ export class RelatedTagsController {
     }
 
     hide() {
+        this.candidateWeights.clear();
         this.requestId++;
         this.visible = false;
         this.pinned = false;
@@ -259,6 +265,7 @@ export class RelatedTagsController {
             header.appendChild(button);
             return button;
         };
+        toolbarButton(t("Switch tag sort order"), t("Sort: {mode}", { mode: t(settingValues.relatedTagsSortMode === "Count" ? "Post count priority" : "Similarity priority") }), () => this.toggleSort());
         const pin = toolbarButton(t("Keep open after insertion"), this.pinned ? "◆" : "◇", () => {
             this.pinned = !this.pinned;
             pin.textContent = this.pinned ? "◆" : "◇";
@@ -312,12 +319,16 @@ export class RelatedTagsController {
                 wiki.rel = "noopener noreferrer";
                 row.appendChild(wiki);
             }
+            this.candidateWeights.bind(row, tag, findRelatedTagInPrompt(this.target.value, tag.name)?.weight ?? 1);
             this.list.appendChild(row);
         });
         this.panel.appendChild(this.list);
         const footer = document.createElement("small");
         footer.className = "ac-related-footer";
-        footer.textContent = t("↑/↓ select · Enter/Tab insert · Esc close · gray tags are already in prompt");
+        footer.textContent = t("↑/↓ select · Esc close · gray tags are already in prompt") +
+            (settingValues.keyAcceptEnter ? " · " + t("Enter: insert") : "") +
+            (settingValues.tabAction === "Sort" ? " · " + t("Tab: switch sorting") : settingValues.tabAction === "Insert" ? " · " + t("Tab: insert") : "") +
+            (settingValues.enableCandidateWeightWheel ? " · " + t("Shift + wheel: preview weight") : "");
         this.panel.appendChild(footer);
         this.updateSelection(false);
         this.updatePosition();
@@ -349,8 +360,16 @@ export class RelatedTagsController {
         const target = this.target;
         const existing = findRelatedTagInPrompt(target.value, tag.name);
         target.focus();
+        const weight = settingValues.enableCandidateWeightWheel ? this.candidateWeights.get(tag) : undefined;
         if (existing) {
             target.setSelectionRange(existing.start, existing.end);
+            if (weight !== undefined) {
+                const text = applyCandidateWeight(target.value.slice(existing.contentStart, existing.contentEnd), weight);
+                this.inserting = true;
+                this.engine.isInserting = true;
+                try { insertTextWithUndo(target, text, existing.start + text.length, existing.start + text.length); }
+                finally { this.engine.isInserting = false; this.inserting = false; }
+            }
         } else {
             const source = getRelatedTagAtCursor(target.value, this.source.start);
             if (!source || source.name !== this.source.name) { this.hide(); return; }
@@ -360,6 +379,7 @@ export class RelatedTagsController {
             if (formatting.replaceUnderscore) text = formatTagUnderscores(text, buildUnderscoreExclusionSet(formatting.formatKeepUnderscoresList));
             if (formatting.escapeParentheses) text = text.replace(/\\?([()[\]])/g, "\\$1");
             if (tag.category === 1 && this.engine.isAnimaWorkflowActive()) text = "@" + text;
+            if (weight !== undefined) text = applyCandidateWeight(text, weight);
             const insertion = buildRelatedInsertion(target.value, source, text, formatting);
             target.setSelectionRange(insertion.start, insertion.end);
             this.inserting = true;
@@ -372,6 +392,8 @@ export class RelatedTagsController {
             }
             this.engine.recordTagUsage(tag.name);
         }
+        this.candidateWeights.values.delete(this.candidateWeights.key(tag));
+        this.source = findRelatedTagInPrompt(target.value, this.source.name) || this.source;
         this.engine.hide();
         if (this.pinned) this.render();
         else this.hide();

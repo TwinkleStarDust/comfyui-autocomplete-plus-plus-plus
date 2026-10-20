@@ -1,5 +1,6 @@
 import { t } from "./i18n.js";
 import { previewWorkflowSound, workflowSounds } from "./workflow-sound.js";
+import { createDictionaryUpdaterPanel } from "./dictionary-updater.js";
 // Settings definitions and state management for ComfyUI-Autocomplete-Plus-Plus-Plus
  
 export const id = "ComfyUI.AutocompletePlusPlus";
@@ -7,11 +8,14 @@ export const name = "Autocomplete+++";
 
 export const settingValues = {
     enabled: true,
-    keyAcceptTab: true,
+    tabAction: "Sort",
+    enableCandidateWeightWheel: true,
+    candidateWeightWheelStep: 0.05,
+    relatedTagsSortMode: "Similarity",
     keyAcceptEnter: true,
     ignoredNodeTypes: "",
     overrideNodeTypes: "",
-    tagFile: "danbooru_merged_zh.csv",
+    tagFile: "danbooru_ffdkj.csv",
     extraFiles: "",
     translationFile: "None",
     searchTranslation: true,
@@ -143,11 +147,14 @@ export function isComfyThemeLight() {
 // Restore persisted settings from localStorage
 try {
     settingValues.enabled = loadSetting("Enabled", true);
-    settingValues.keyAcceptTab = loadSetting("KeyAcceptTab", true);
+    settingValues.tabAction = loadSetting("TabAction", "Sort");
+    settingValues.enableCandidateWeightWheel = loadSetting("EnableCandidateWeightWheel", true);
+    settingValues.candidateWeightWheelStep = loadSetting("CandidateWeightWheelStep", 0.05, true);
+    settingValues.relatedTagsSortMode = loadSetting("RelatedTagsSortMode", "Similarity");
     settingValues.keyAcceptEnter = loadSetting("KeyAcceptEnter", true);
     settingValues.ignoredNodeTypes = loadSetting("IgnoredNodeTypes", "");
     settingValues.overrideNodeTypes = loadSetting("OverrideNodeTypes", "");
-    settingValues.tagFile = loadSetting("TagFile", "danbooru_merged_zh.csv");
+    settingValues.tagFile = loadSetting("TagFile", "danbooru_ffdkj.csv");
     settingValues.extraFiles = loadSetting("ExtraFiles", "");
     settingValues.translationFile = loadSetting("TranslationFile", "None");
     settingValues.searchTranslation = loadSetting("SearchTranslation", true);
@@ -653,6 +660,17 @@ function createPopupPreview() {
 
 export function registerSettings(app) {
     app.ui.settings.addSetting({
+        id: id + ".FfdkjDictionary",
+        name: t("ffdkj Chinese Dictionary"),
+        type: () => createDictionaryUpdaterPanel(async (filename) => {
+            await refreshAvailableFiles();
+            await app.ui.settings.setSettingValue(id + ".TagFile", filename);
+            await app.ui.settings.setSettingValue(id + ".TranslationFile", "None");
+        }),
+        defaultValue: "",
+        category: [name, "Tags & Dictionaries", "ffdkj Chinese Dictionary"]
+    });
+    app.ui.settings.addSetting({
         id: id + ".WorkflowCompletionSound",
         name: t("Workflow Completion Sound"),
         tooltip: t("Play once when each queued task succeeds, including cached tasks. Errors and interruptions stay silent. Independent of the autocomplete switch."),
@@ -754,7 +772,7 @@ export function registerSettings(app) {
     for (const definition of [
         { key: "EnableRelatedTags", state: "enableRelatedTags", name: "Enable Related Tags", type: "boolean", tooltip: "Show related Danbooru tags beside the prompt. Ctrl+Shift+Space also opens the panel at the caret." },
         { key: "RelatedTagsTrigger", state: "relatedTagsTrigger", name: "Related Tags Trigger", type: "combo", options: ["Click", "Ctrl + Click", "Shortcut only"], tooltip: "Choose how to open related tags. Ctrl+Shift+Space is available in every mode." },
-        { key: "MaxRelatedTags", state: "maxRelatedTags", name: "Maximum Related Tags", type: "slider", attrs: { min: 5, max: 100, step: 5 }, tooltip: "Maximum number of related tags, ranked by Jaccard similarity." },
+        { key: "MaxRelatedTags", state: "maxRelatedTags", name: "Maximum Related Tags", type: "slider", attrs: { min: 5, max: 100, step: 5 }, tooltip: "Maximum number of related tags after sorting by similarity or post count." },
         { key: "RelatedTagsLayout", state: "relatedTagsLayout", name: "Related Tags Layout", type: "combo", options: ["Horizontal", "Vertical"], tooltip: "Default panel layout. The panel toolbar can switch layouts temporarily." },
     ]) {
         app.ui.settings.addSetting({
@@ -887,63 +905,58 @@ export function registerSettings(app) {
     });
 
     app.ui.settings.addSetting({
-        id: id + ".KeyAccept",
-        name: "Insert Suggestion with",
-        tooltip: "Choose which keys can be used to insert the currently selected candidate (Tab, Enter, or both).",
-        type: () => {
-            const container = document.createElement("div");
-            container.style.display = "flex";
-            container.style.flexDirection = "column";
-            container.style.gap = "6px";
-            container.style.alignItems = "flex-end";
-            container.style.justifyContent = "center";
-            container.style.padding = "2px 0";
-            const tabRow = document.createElement("div");
-            tabRow.style.display = "flex";
-            tabRow.style.alignItems = "center";
-            tabRow.style.gap = "8px";
-            tabRow.style.cursor = "pointer";
-
-            const tabText = document.createElement("span");
-            tabText.textContent = "Tab";
-            tabText.className = "text-sm text-muted select-none";
-
-            const tabSwitch = createToggleSwitch(settingValues.keyAcceptTab, (checked) => {
-                settingValues.keyAcceptTab = checked;
-                persistSetting("KeyAcceptTab", checked);
-            });
-
-            tabText.addEventListener("click", () => tabSwitch.click());
-
-            tabRow.appendChild(tabText);
-            tabRow.appendChild(tabSwitch);
-            const enterRow = document.createElement("div");
-            enterRow.style.display = "flex";
-            enterRow.style.alignItems = "center";
-            enterRow.style.gap = "8px";
-            enterRow.style.cursor = "pointer";
-
-            const enterText = document.createElement("span");
-            enterText.textContent = "Enter";
-            enterText.className = "text-sm text-muted select-none";
-
-            const enterSwitch = createToggleSwitch(settingValues.keyAcceptEnter, (checked) => {
-                settingValues.keyAcceptEnter = checked;
-                persistSetting("KeyAcceptEnter", checked);
-            });
-
-            enterText.addEventListener("click", () => enterSwitch.click());
-
-            enterRow.appendChild(enterText);
-            enterRow.appendChild(enterSwitch);
-
-            container.appendChild(tabRow);
-            container.appendChild(enterRow);
-
-            return container;
-        },
-        defaultValue: true,
-        category: [name, "Autocomplete", "Insert Suggestion with"]
+        id: id + ".TabAction",
+        name: t("Tab behavior"),
+        tooltip: t("When candidates are open, Tab switches sorting by default. Shift+Tab keeps normal focus navigation."),
+        type: "combo",
+        options: [{ text: t("Switch sorting"), value: "Sort" }, { text: t("Insert candidate"), value: "Insert" }, { text: t("Disabled"), value: "Disabled" }],
+        defaultValue: settingValues.tabAction,
+        category: [name, "Autocomplete", "Tab behavior"],
+        onChange: value => { settingValues.tabAction = value; persistSetting("TabAction", value); }
+    });
+    app.ui.settings.addSetting({
+        id: id + ".KeyAcceptEnter",
+        name: t("Enter inserts candidate"),
+        type: "boolean",
+        defaultValue: settingValues.keyAcceptEnter,
+        category: [name, "Autocomplete", "Enter inserts candidate"],
+        onChange: value => { settingValues.keyAcceptEnter = !!value; persistSetting("KeyAcceptEnter", !!value); }
+    });
+    app.ui.settings.addSetting({
+        id: id + ".EnableCandidateWeightWheel",
+        name: t("Shift + wheel adjusts candidate weight"),
+        tooltip: t("Hover a candidate and hold Shift while scrolling. Preview the weight, then confirm to insert or update an existing related tag."),
+        type: "boolean",
+        defaultValue: settingValues.enableCandidateWeightWheel,
+        category: [name, "Autocomplete", "Shift + wheel adjusts candidate weight"],
+        onChange: value => {
+            settingValues.enableCandidateWeightWheel = !!value;
+            persistSetting("EnableCandidateWeightWheel", !!value);
+            window.dispatchEvent(new Event("autocomplete-popup-settings-changed"));
+        }
+    });
+    app.ui.settings.addSetting({
+        id: id + ".CandidateWeightWheelStep",
+        name: t("Candidate wheel weight step"),
+        tooltip: t("Weight change per wheel event. Independent of Ctrl+Up/Down weight steps."),
+        type: "slider",
+        attrs: { min: 0.01, max: 0.50, step: 0.01 },
+        defaultValue: settingValues.candidateWeightWheelStep,
+        category: [name, "Autocomplete", "Candidate wheel weight step"],
+        onChange: value => { settingValues.candidateWeightWheelStep = Number(value); persistSetting("CandidateWeightWheelStep", Number(value)); }
+    });
+    app.ui.settings.addSetting({
+        id: id + ".RelatedTagsSortMode",
+        name: t("Related tag sort order"),
+        type: "combo",
+        options: [{ text: t("Similarity priority"), value: "Similarity" }, { text: t("Post count priority"), value: "Count" }],
+        defaultValue: settingValues.relatedTagsSortMode,
+        category: [name, "Related Tags", "Related tag sort order"],
+        onChange: value => {
+            settingValues.relatedTagsSortMode = value;
+            persistSetting("RelatedTagsSortMode", value);
+            window.dispatchEvent(new Event("autocomplete-related-sort-changed"));
+        }
     });
 
     app.ui.settings.addSetting({

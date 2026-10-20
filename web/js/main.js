@@ -10,6 +10,7 @@ import { attachHotkeysToTextarea } from "./hotkeys.js";
 import { setupDictionariesControllerComponent, setupDictionariesControllerNodeHooks, isDictionariesControllerTextarea } from "./dictionaries-controller.js";
 import { refreshCivitaiHost, fetchLMSyntaxFormat } from "./lora-manager-provider.js";
 import { setupWorkflowSound } from "./workflow-sound.js";
+import { startDictionaryUpdates } from "./dictionary-updater.js";
 
 const extensionId = "ComfyUI.AutocompletePlusPlus";
 const extensionName = "Autocomplete+++";
@@ -463,9 +464,9 @@ function attachListenersToTextarea(element) {
         if (relatedTags?.handleKeyDown(e)) return;
 
         const isOverridden = isOverriddenTarget(e.target);
-        if (isOverridden && engine && (engine.isVisible || engine.searchPendingRaf)) {
+        if (isOverridden && engine && (engine.isVisible || engine.searchTimer)) {
             const key = e.key;
-            if (key === "Tab" || key === "Enter" || key === "ArrowUp" || key === "ArrowDown" || key === "Escape" || key === "PageUp" || key === "PageDown") {
+            if ((key === "Tab" && !e.shiftKey && settingValues.tabAction !== "Disabled") || key === "Enter" || key === "ArrowUp" || key === "ArrowDown" || key === "Escape" || key === "PageUp" || key === "PageDown") {
                 e.stopImmediatePropagation();
             }
         }
@@ -490,13 +491,22 @@ function attachListenersToTextarea(element) {
         if (engine) engine.handleInput(e);
     }, true);
 
+    element.addEventListener("compositionstart", () => {
+        relatedTags?.hide();
+        if (engine) engine.handleCompositionStart();
+    });
+    element.addEventListener("compositionend", e => {
+        if (engine) engine.isComposing = false;
+        if (!isExcludedTarget(element) && engine) engine.handleCompositionEnd(e);
+    });
+
     // Capture-phase keyup interceptor
     element.addEventListener("keyup", (e) => {
         if (relatedTags?.visible) return;
         if (isOverriddenTarget(e.target)) {
             e.stopImmediatePropagation();
         }
-        if (engine) engine.handleKeyUp(e);
+
     }, true);
 
     element.addEventListener("click", (e) => {
@@ -507,29 +517,16 @@ function attachListenersToTextarea(element) {
         }
         if (relatedTags) relatedTags.handleClick(e);
         if (engine && engine.isVisible) {
-            engine.updatePosition();
+            engine.requestPositionUpdate();
         }
     });
 }
 
 function initializeDOMObserver() {
-    const SELECTORS = [
-        "textarea.comfy-multiline-input",
-        "textarea.p-inputtextarea",
-        "textarea.node-textarea",
-        ".litegraph textarea",
-        "textarea"
-    ];
-
     function scanElement(root) {
         if (!root) return;
-        SELECTORS.forEach(selector => {
-            if (root.matches && root.matches(selector)) {
-                attachListenersToTextarea(root);
-            }
-            const found = root.querySelectorAll(selector);
-            found.forEach(attachListenersToTextarea);
-        });
+        if (root.matches?.("textarea")) attachListenersToTextarea(root);
+        root.querySelectorAll("textarea").forEach(attachListenersToTextarea);
     }
 
     scanElement(document.body);
@@ -537,8 +534,9 @@ function initializeDOMObserver() {
     const observer = new MutationObserver((mutations) => {
         mutations.forEach(mutation => {
             mutation.addedNodes.forEach(node => {
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                    scanElement(node);
+                if (node.nodeType === Node.ELEMENT_NODE &&
+                    !node.closest?.("#tagcomplete-popup-container, .ac-related-panel, #tagcomplete-preview-card, #tagcomplete-trigger-preview-card, #tagcomplete-compound-card, #tagcomplete-info-popover")) {
+                    if (node.matches?.("textarea") || node.querySelector?.("textarea")) scanElement(node);
                 }
             });
         });
@@ -560,11 +558,8 @@ function initializeDOMObserver() {
         };
     }
 
-    window.addEventListener("resize", () => {
-        if (engine && engine.isVisible) engine.updatePosition();
-    });
     window.addEventListener("wheel", () => {
-        if (engine && engine.isVisible) engine.updatePosition();
+        if (engine && engine.isVisible) engine.requestPositionUpdate();
     }, { passive: true });
 }
 
@@ -780,6 +775,12 @@ app.registerExtension({
         engine = new TagCompleteEngine();
         if (typeof window !== "undefined") window.tagCompleteEngine = engine;
         await engine.loadAllData();
+        startDictionaryUpdates(async (status) => {
+            await refreshAvailableFiles();
+            window.dispatchEvent(new CustomEvent("tagcomplete-reload-tags", {
+                detail: { force: true, filename: status.filename }
+            }));
+        });
         relatedTags = new RelatedTagsController(engine);
 
         initializeDOMObserver();

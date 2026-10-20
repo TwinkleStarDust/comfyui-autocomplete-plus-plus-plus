@@ -2,16 +2,33 @@
 
 [项目首页](../README.md) · [使用指南](../README_zh.md) · [发布说明](PUBLISHING.md)
 
-本文说明当前 CSV 快照、译名来源及本地关联索引的维护方式。日常搜索和界面操作见使用指南。默认主词库为 `danbooru_merged_zh.csv`，本项目 Danbooru 词库截止至 **2026.10.12**。
+本文说明当前 CSV 快照、译名来源及本地关联索引的维护方式。日常搜索和界面操作见使用指南。新安装默认主词库为 `danbooru_ffdkj.csv`，随包快照来自上游 `v2026-10-11` Release，含 332,385 条标签。旧合并快照 `danbooru_merged_zh.csv` 的数据截止至 **2026.10.12**。
 
 [文件与格式](#词库文件与格式) · [合并与保留规则](#合并来源与翻译保留规则) · [关联索引构建](#关联索引构建)
 
 ## 词库文件与格式
 
+### ffdkj 词库与更新
+
+安装包已附带可离线使用的 ffdkj 快照。在设置的「标签与词典 → ffdkj 中文词库」中更新 [ffdkj](https://github.com/ffdkj/ffdkj-Danbooru_Tag-Chinese-English-Translation-Table) 数据。原始文件取自最新 Release 的 `tags.csv`，保存在 `data/ffdkj/tags.csv`；转换后的 `tags/danbooru_ffdkj.csv` 可作为主词库或附加词库。点击「使用此词库」会设置它为全局主词库，并将独立翻译文件设为「无」，以使用 ffdkj 内嵌译名。画布词典控制器仍优先于全局设置。
+
+上游 CSV 带表头，列为 `name,category,cn_name,post_count`，使用单引号包裹含逗号等特殊字符的字段。插件按其格式解析，再输出无表头、双引号转义的五列格式 `tag,category,post_count,aliases,translation`。分类、投稿数和译名使用 ffdkj 数据；同名标签的别名从本地 `danbooru_merged_zh.csv` 保留。ffdkj 收录范围与旧合并词库不同，未收录的旧标签仍可通过原词库使用。
+
+更新功能包括手动检查、安装 / 更新、重新下载，以及默认关闭的每日自动更新。自动更新在页面启动、恢复可见和每小时轮询时判断是否已距上次尝试满 24 小时；满足条件后在后台检查并安装。关闭页面时不会继续定时检查，已开始的后端下载可以完成。版本标记同时比较 Release 标签和文件 ETag，能够识别同名 Release 的修订。检查与下载复用进行中的任务，检查相同版本不会重复下载；下载、完整性或 CSV 校验失败时不替换现有补全词库。
+
+安装前先在临时目录完成下载和转换，再替换 CSV。更新后的文件列表和补全缓存会自动刷新；关联标签仍使用独立的本地共现索引，更新标签不会更新共现关系。仓库与安装包包含 `tags/danbooru_ffdkj.csv` 及其版本清单 `tags/danbooru_ffdkj.snapshot.json`，新安装可直接使用。更新器会替换 CSV；只有文件哈希与随包清单一致时，才将其识别为该快照版本。个人更新状态、下载缓存及自动更新选项保存在被忽略的 `data/ffdkj/`，备份时可保留，发布时不打包。
+
+ffdkj 词库采用 MIT 许可证，随包保留 [原许可](../tags/FFDKJ-LICENSE.txt)。其主分支的 SQLite 每日更新，CSV 由定期或手动发布的 Release 提供，因此本功能跟随 **CSV 的最新发布版本**。参考项目 [ComfyUI-Autocomplete-Aaalice](https://github.com/Aaalice233/ComfyUI-Autocomplete-Aaalice) 当前下载 `tag.sqlite`，在后端查询译名和中文反查；本插件使用 Release CSV 转换后复用现有本地搜索。
+
+安装或修改更新功能后，需要重启 ComfyUI 后端并强制刷新页面。仅刷新浏览器时，新接口尚未加载，本地请求可能返回 404 / 405；面板会提示重启后端。GitHub 连接失败时，请检查代理是否可用；下载器会继承 Windows 系统代理及 `HTTP_PROXY` / `HTTPS_PROXY` 环境变量。
+
+![ffdkj 词库更新面板（图中已手动启用每日更新）](../assets/images/zh-ffdkj-updater-v1.1.webp)
+
 ### 当前提供的文件
 
 | 文件 | 用途 | 当前快照 |
 | --- | --- | --- |
+| [`tags/danbooru_ffdkj.csv`](../tags/danbooru_ffdkj.csv) | 默认五列中文主词库，可更新 | 332,385 条；上游 v2026-10-11 |
 | [`tags/danbooru_merged_zh.csv`](../tags/danbooru_merged_zh.csv) | 五列合并主词库，内嵌译名 | 296,884 条去重标签 |
 | [`tags/translations/danbooru_zh.csv`](../tags/translations/danbooru_zh.csv) | 与主词库第五列同步的两列翻译 | 296,884 条 |
 | [`tags/danbooru.csv`](../tags/danbooru.csv) | 上游原有主词库，保留作为可选项 | 140,782 条 |
