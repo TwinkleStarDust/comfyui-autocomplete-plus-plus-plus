@@ -63,8 +63,12 @@ export class RelatedTagsController {
         this.panel.hidden = true;
         this.panel.setAttribute("role", "region");
         document.body.appendChild(this.panel);
-        // Keep the textarea focused, including when clicking toolbar buttons.
-        this.panel.addEventListener("mousedown", event => event.preventDefault());
+        // Classic canvas pointer handlers steal focus before the button's click.
+        const keepFocus = event => { event.preventDefault(); event.stopPropagation(); };
+        this.panel.addEventListener("pointerdown", keepFocus);
+        this.panel.addEventListener("mousedown", keepFocus);
+        this.panel.addEventListener("mouseup", event => event.stopPropagation());
+        this.panel.addEventListener("click", event => event.stopPropagation());
         document.addEventListener("pointerdown", event => {
             if (this.visible && !this.panel.contains(event.target) && event.target !== this.target) this.hide();
         }, true);

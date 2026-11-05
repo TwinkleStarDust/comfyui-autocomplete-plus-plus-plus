@@ -16,14 +16,11 @@ Autocomplete+++ 在 ComfyUI 的提示词输入框中提供标签搜索、中文�
 
 项目是 [Autocomplete++](https://github.com/michikora/ComfyUI-Autocomplete-Plus-Plus) 的 Fork，在原有功能上加入中文 UI、双排序、完整分页、类别筛选、可调补全布局和本地关联标签。新安装默认使用 ffdkj 中文词库，附带 **332,385 条标签**的可用快照，支持手动和每日自动更新。旧合并词库仍保留，其数据截止至 **2026.10.12**。
 
-## v1.1.0 更新
+## v1.1.1 更新
 
-- 输入搜索改为预处理与分批执行，减少连续打字时的卡顿；中文输入法组词期间暂停补全。
-- `Tab` 默认切换排序；普通补全和关联面板均支持 `Shift＋滚轮` 预览权重，确认后生效。
-- 修复普通候选的已有标签灰显；关联面板可直接更新已有标签的权重，并保留撤销。
-- 默认使用 ffdkj 中文词库，加入更新面板；完善提示音说明与设置截图。
+- 修复关闭 Node 2.0 后，点击相关标签无法插入提示词的问题。更新后按 `Ctrl + F5` 刷新页面。
 
-[完整更新日志](CHANGELOG.md) · [下载 v1.1.0](https://github.com/TwinkleStarDust/comfyui-autocomplete-plus-plus-plus/releases/tag/v1.1.0)
+[完整更新日志](CHANGELOG.md) · [下载 v1.1.1](https://github.com/TwinkleStarDust/comfyui-autocomplete-plus-plus-plus/releases/tag/v1.1.1)
 
 ## 快速开始
 
@@ -31,7 +28,7 @@ Autocomplete+++ 在 ComfyUI 的提示词输入框中提供标签搜索、中文�
 
 #### 通过 ComfyUI-Manager 安装
 
-GitHub 当前版本为 **v1.1.0**，同版已提交 Comfy Registry。Registry 检查与 Manager 索引同步需要时间；暂未显示新版时，可使用下方 ZIP 安装。
+GitHub 当前版本为 **v1.1.1**。Comfy Registry 单独发布，此次 GitHub 发布不会自动同步到 Manager；暂未显示新版时，可使用下方 ZIP 安装。
 
 > [Comfy Registry 项目页](https://registry.comfy.org/zh/publishers/twinklestar/nodes/comfyui-autocomplete-plus-plus-plus)可查看版本及检查状态。[发布流程说明](docs/PUBLISHING.md#registry-扫描状态)。
 
@@ -42,7 +39,7 @@ GitHub 当前版本为 **v1.1.0**，同版已提交 Comfy Registry。Registry �
 
 #### 手动安装 ZIP
 
-1. 从 [Releases](https://github.com/TwinkleStarDust/comfyui-autocomplete-plus-plus-plus/releases/latest) 下载 `comfyui-autocomplete-plus-plus-plus-v1.1.0.zip`，解压到 `ComfyUI/custom_nodes/comfyui-autocomplete-plus-plus-plus/`。
+1. 从 [Releases](https://github.com/TwinkleStarDust/comfyui-autocomplete-plus-plus-plus/releases/latest) 下载 `comfyui-autocomplete-plus-plus-plus-v1.1.1.zip`，解压到 `ComfyUI/custom_nodes/comfyui-autocomplete-plus-plus-plus/`。
 2. 确认该目录下直接包含 `__init__.py`，重启 ComfyUI 后端，再按 `Ctrl + F5` 刷新浏览器。
 
 安装后，将 ComfyUI 语言设为中文，在设置中搜索 `Autocomplete+++`。

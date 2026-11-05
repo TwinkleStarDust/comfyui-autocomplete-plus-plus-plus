@@ -43,13 +43,13 @@ git add -f tags/translations/your_dictionary.csv
 
 关联索引需要单独随仓库或下载包提供，或者由使用者按[索引说明](DICTIONARIES.md#关联索引构建)构建。若发布包不包含该文件，请在下载说明中注明。`data/user_data.json` 保存个人设置与标签使用历史，已被忽略，不应作为公共词库发布。
 
-## v1.1.0 安装包
+## v1.1.1 安装包
 
-命名附件为 `comfyui-autocomplete-plus-plus-plus-v1.1.0.zip`，根目录为插件目录，包含源码、文档、截图、默认 ffdkj 词库、旧合并词库和本地关联索引。附 `SHA256SUMS.txt` 用于校验。
+命名附件为 `comfyui-autocomplete-plus-plus-plus-v1.1.1.zip`，根目录为插件目录，包含源码、文档、截图、默认 ffdkj 词库、旧合并词库和本地关联索引。附 `SHA256SUMS.txt` 用于校验。
 
 升级保留用户已保存的设置；改用 ffdkj 时可在更新面板点击「使用此词库」。更新后重启 ComfyUI 后端并按 `Ctrl + F5`。`Tab` 默认行为改为切换排序，需要旧操作时可设为「插入候选」。
 
-v1.1.0 已发布到 GitHub Releases，并通过现有 GitHub Actions 流程提交至 Comfy Registry。两个渠道分别发布，Registry 还需完成平台检查和 Manager 索引同步。
+v1.1.1 发布到 GitHub Releases，修复经典画布中的相关标签插入。此次不触发 Registry 发布。v1.1.0 已通过现有 GitHub Actions 流程提交至 Comfy Registry。两个渠道分别发布，Registry 还需完成平台检查和 Manager 索引同步。
 
 ## 项目与 Registry 元数据
 
